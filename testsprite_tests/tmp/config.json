@@ -1,0 +1,16 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8080",
+  "executionArgs": {
+    "projectName": "STATUSREPORT2.0-main",
+    "projectPath": "C:\\Users\\pitte\\OneDrive\\Documentos\\PROJETOS DESENVOLVIMENTO\\STATUS-REPORT\\SESI-SENAI\\STATUSREPORT2.0-main",
+    "testIds": [],
+    "additionalInstruction": "Analisar o código em busca de erros, vulnerabilidades de segurança, problemas de performance e oportunidades de melhoria. Verificar também a qualidade do código e conformidade com as melhores práticas.",
+    "envs": {
+      "API_KEY": "sk-user-mWk5XQt-AxVG-3C4UpV_7hMMz1uxovwKSRZtQ6M_PceHnog1XXiD4QvQj-LkaQLixZDIB-DlGRVeDNnF3nhKeHVzN_7SazpcJnqur-keAQxsDlawmUXYw4BVeIxIYrAHQLI"
+    }
+  },
+  "proxy": "http://b62596b0-bd31-4cd3-aa9b-d9a38ff65911:6zqqjEf0wAbo7zlrVDouFM947esuWXRo@tun.testsprite.com:8080"
+}

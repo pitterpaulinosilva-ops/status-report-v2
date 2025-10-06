@@ -1,0 +1,418 @@
+[
+  {
+    "id": "TC001",
+    "title": "Dashboard loads real-time KPI data correctly",
+    "description": "Verify that the dashboard analytics display accurate and up-to-date KPIs related to process mapping, plan execution, and occurrence handling as aligned with backend data sources.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Login to the application and navigate to the Dashboard overview screen"
+      },
+      {
+        "type": "assertion",
+        "description": "Check that all KPI charts (process mapping, plan execution, occurrence handling) load without errors"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that data displayed matches backend API responses for KPI metrics"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm real-time updates by triggering a backend data change and verifying dashboard reflects update"
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "Complete action management workflow for a health action",
+    "description": "Validate that users can track all 34 health-related action items including adding, updating status, and commenting with history preservation.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to Action Management System"
+      },
+      {
+        "type": "action",
+        "description": "Select an existing health action item"
+      },
+      {
+        "type": "action",
+        "description": "Update the status of the action item and save changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the status change is reflected immediately in the UI and persisted after refresh"
+      },
+      {
+        "type": "action",
+        "description": "Add a new comment to the action item's comment history"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the new comment is appended correctly and visible in the comments history"
+      },
+      {
+        "type": "action",
+        "description": "Repeat updating for all 34 health actions to ensure full coverage"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure no action items are missing and all can be tracked with comments and status"
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Advanced filtering with multiple combined criteria",
+    "description": "Ensure that the advanced filtering tool correctly filters health actions and processes based on text search, status, responsible user, sector, and date ranges combined.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the Advanced Filtering component"
+      },
+      {
+        "type": "action",
+        "description": "Apply a text search filter for keyword 'infection'"
+      },
+      {
+        "type": "action",
+        "description": "Select status filters including 'In Progress' and 'Completed'"
+      },
+      {
+        "type": "action",
+        "description": "Choose a responsible user from dropdown"
+      },
+      {
+        "type": "action",
+        "description": "Select one or more sectors from the sector filter"
+      },
+      {
+        "type": "action",
+        "description": "Set a date range filter for the last 3 months"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the filtered results only include entries matching all selected criteria"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that combining filters does not result in errors or empty inconsistent results"
+      },
+      {
+        "type": "action",
+        "description": "Clear filters and verify full unfiltered data set is restored"
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Export filtered reports in PDF and Excel formats",
+    "description": "Validate export functionality generates PDF and Excel reports that correctly represent the currently applied filters and maintain proper formatting.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Apply filters to narrow down data in the dashboard or action list"
+      },
+      {
+        "type": "action",
+        "description": "Click on Export button and choose PDF format"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the downloaded PDF report matches the filtered data exactly and is correctly formatted"
+      },
+      {
+        "type": "action",
+        "description": "Click on Export button and choose Excel format"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify that the Excel file contains correct rows and columns matching the filter criteria"
+      },
+      {
+        "type": "assertion",
+        "description": "Open exported reports and confirm readability and no data truncation or corruption"
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "AI Assistant contextual conversation and persistent chat history",
+    "description": "Ensure the AI assistant chat modal supports specialized conversations for ONA and Microsoft 365 topics with persistent chat history across user sessions.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Open AI Assistant chat modal from the dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Initiate conversation using ONA compliance related queries"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the AI assistant responds contextually and accurately to ONA questions"
+      },
+      {
+        "type": "action",
+        "description": "Switch to Microsoft 365 assistant mode and ask relevant questions"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm valid and specific answers from the assistant regarding MS 365 usage"
+      },
+      {
+        "type": "action",
+        "description": "Close the chat modal and log out"
+      },
+      {
+        "type": "action",
+        "description": "Log back in and open AI Assistant chat modal"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify previous chat history is retained and visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Check chat history synchronization works across multiple sessions"
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Mobile-first responsive UI with theme toggling and collapsible sidebar",
+    "description": "Test responsiveness of the UI on multiple screen sizes and verify correct operation of theme toggling and sidebar collapsing features.",
+    "category": "ui",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access the application on various devices (mobile, tablet, desktop) or simulate screen sizes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the layout adjusts fluidly without broken elements or horizontal scrolling"
+      },
+      {
+        "type": "action",
+        "description": "Toggle the theme between dark and light modes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify UI colors and styles update appropriately and remain accessible"
+      },
+      {
+        "type": "action",
+        "description": "Collapse and expand the navigation sidebar"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm sidebar animations and content visibility update correctly in both states"
+      },
+      {
+        "type": "assertion",
+        "description": "Check usability and readability of menus and buttons in all configurations"
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Real-time notification system with toast alerts",
+    "description": "Ensure that notifications for action updates, new comments, and system alerts appear promptly as toast messages with accurate content.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Perform actions that trigger notifications (e.g., update an action status, add a comment)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify toast notification appears immediately after the triggering event"
+      },
+      {
+        "type": "assertion",
+        "description": "Check notification content matches the action (e.g., 'Action status updated', 'New comment added')"
+      },
+      {
+        "type": "action",
+        "description": "Trigger multiple notifications in quick succession"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm that all notifications appear distinctly and are not dropped or overlapped"
+      },
+      {
+        "type": "action",
+        "description": "Dismiss toast messages manually and verify they are removed from screen cleanly"
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Routing correctness and error page handling",
+    "description": "Verify that React Router integration properly displays main pages and gracefully handles invalid routes by showing a 404 error page.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate via sidebar links to all main pages (Dashboard, Action Management, Reports, AI Assistant)"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify each page loads correctly without errors"
+      },
+      {
+        "type": "action",
+        "description": "Manually enter invalid URLs or broken links in the browser"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm the application displays the 404 Not Found error page"
+      },
+      {
+        "type": "assertion",
+        "description": "Test browser Back and Forward buttons to ensure routing behaves as expected"
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "UI components conform to design and accessibility standards",
+    "description": "Validate that all reusable UI components such as buttons, dialogs, charts, inputs, badges, and toast notifications conform visually and functionally to design specifications and support accessibility.",
+    "category": "ui",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Review all UI components rendered in typical user workflows"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify consistency in colors, typography, spacing, and interactions as per design"
+      },
+      {
+        "type": "assertion",
+        "description": "Check keyboard navigability and focus management for dialogs and inputs"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm components provide appropriate ARIA labels and roles for accessibility"
+      },
+      {
+        "type": "action",
+        "description": "Test UI components with screen readers for proper announcements"
+      },
+      {
+        "type": "assertion",
+        "description": "Ensure no component causes layout shifts or visual glitches on interaction"
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Process mapping and implantation progress dashboards accuracy",
+    "description": "Check that the process mapping and implantation status dashboards accurately reflect progress data consistent with planning documents and reports.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access the process mapping and implantation status dashboards"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify all process nodes and workflow steps are displayed correctly with current statuses"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm data shown matches the official planning and progress documentation"
+      },
+      {
+        "type": "action",
+        "description": "Simulate process updates and verify dashboards update accordingly"
+      },
+      {
+        "type": "assertion",
+        "description": "Check visualizations and charts accurately represent completion percentage and timelines"
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Incidence tracking displaying counts, status, and timelines correctly",
+    "description": "Validate that the incidence tracking feature shows accurate occurrence counts, resolution status, and timelines within the system.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to incidence tracking dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the number of occurrences displayed matches incident records"
+      },
+      {
+        "type": "assertion",
+        "description": "Check resolution status is correctly reflected for each incidence"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm timeline visualizations match incident report dates and resolution deadlines"
+      },
+      {
+        "type": "action",
+        "description": "Add a new incident or update an existing one"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updates are reflected immediately in incidence tracking views"
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Error handling on invalid input in filtering and action management",
+    "description": "Test that system validates inputs properly and provides meaningful feedback or error states for invalid or malformed data in filters and action updates.",
+    "category": "error handling",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Enter invalid date ranges in filter such as start date after end date"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify application shows a relevant error message and prevents filter execution"
+      },
+      {
+        "type": "action",
+        "description": "Attempt to submit empty or malformed comments in action items"
+      },
+      {
+        "type": "assertion",
+        "description": "Check validation errors appear and input is not accepted"
+      },
+      {
+        "type": "action",
+        "description": "Input invalid or unsupported file formats for export (if applicable)"
+      },
+      {
+        "type": "assertion",
+        "description": "Confirm system shows an error and disables export until corrected"
+      }
+    ]
+  }
+]
