@@ -31,15 +31,39 @@ export default defineConfig(({ mode }) => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          ui: ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
-          charts: ['recharts'],
-          utils: ['date-fns', 'clsx', 'class-variance-authority']
+        manualChunks: (id) => {
+          // React core
+          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+            return 'vendor';
+          }
+          // Radix UI components
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'ui';
+          }
+          // Charts library
+          if (id.includes('node_modules/recharts')) {
+            return 'charts';
+          }
+          // Supabase
+          if (id.includes('node_modules/@supabase')) {
+            return 'supabase';
+          }
+          // Utilities
+          if (id.includes('node_modules/date-fns') || 
+              id.includes('node_modules/clsx') || 
+              id.includes('node_modules/class-variance-authority')) {
+            return 'utils';
+          }
+          // Lucide icons
+          if (id.includes('node_modules/lucide-react')) {
+            return 'icons';
+          }
         }
       }
     },
-    chunkSizeWarningLimit: 1000
+    chunkSizeWarningLimit: 1500,
+    sourcemap: false,
+    minify: 'esbuild'
   },
   plugins: [
     react(),
