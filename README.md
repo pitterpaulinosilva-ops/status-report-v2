@@ -2,11 +2,9 @@
 
 Sistema de gestão e acompanhamento do Plano de Ação para Manutenção da Certificação ONA 2026.
 
-## ⚠️ Importante - Segurança
+## 💾 Armazenamento de Dados
 
-**NUNCA commite o arquivo `.env.local` com credenciais reais!**
-
-Este repositório usa Supabase para autenticação e banco de dados. Você precisa configurar suas próprias credenciais.
+Este sistema utiliza **localStorage** para armazenar os dados localmente no navegador. Os dados são salvos automaticamente e persistem entre sessões.
 
 ## 🎨 Design Premium SESI/SENAI
 
@@ -22,36 +20,19 @@ Interface moderna e profissional com:
 
 ## 🚀 Deploy no Vercel
 
-### ⚠️ IMPORTANTE: Configure as Variáveis de Ambiente ANTES do Deploy!
-
-**Se você não configurar as variáveis, a aplicação vai mostrar uma tela branca!**
-
-### Passo 1: Configurar Variáveis de Ambiente
+### Deploy Automático (Recomendado)
 
 1. Acesse [vercel.com](https://vercel.com) e faça login
-2. Vá em **Settings** → **Environment Variables**
-3. Adicione as seguintes variáveis:
-
-```
-VITE_SUPABASE_URL=https://qjlautkateaouiaxamoo.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqbGF1dGthdGVhb3VpYXhhbW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MDQzNjcsImV4cCI6MjA3Nzk4MDM2N30.7f4IV7bTjjXcr6q-FOi3yNqn9_oJuvJO0hs0hzWuoYk
-```
-
-4. Marque: **Production**, **Preview**, **Development**
-5. Clique em **Save**
-
-### Passo 2: Deploy
-
-#### Opção 1: Deploy Automático (Recomendado)
-
-1. Clique em "Add New Project"
-2. Importe o repositório: `pitterpaulinosilva-ops/status-report-v2`
-3. Configure:
+2. Clique em "Add New Project"
+3. Importe o repositório: `pitterpaulinosilva-ops/status-report-v2`
+4. Configure:
    - **Framework Preset**: Vite
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
    - **Install Command**: `npm install`
-4. Clique em "Deploy"
+5. Clique em "Deploy"
+
+**Pronto!** Não precisa configurar variáveis de ambiente.
 
 ### Opção 2: Deploy via CLI
 
