@@ -99,7 +99,7 @@ const SectorChart = () => {
               Total de Ações por Setor
             </h3>
             <div className="space-y-3 max-h-64 overflow-y-auto">
-              {displayData.map((sector, index) => (
+              {displayData.map((sector) => (
                 <div 
                   key={sector.name} 
                   className="flex justify-between items-center bg-slate-50 dark:bg-slate-700 p-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"

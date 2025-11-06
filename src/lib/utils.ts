@@ -2,12 +2,13 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { parse, isAfter } from "date-fns"
+import { TaskDelayStatus } from "@/types/task"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function calculateDelayStatus(dueDate: string, currentStatus: string, existingDelayStatus?: string): string {
+export function calculateDelayStatus(dueDate: string, currentStatus: string): TaskDelayStatus {
   // Se já está concluído, sempre retorna Concluído
   if (currentStatus === 'Concluído') {
     return 'Concluído';

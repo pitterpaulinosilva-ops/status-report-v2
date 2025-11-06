@@ -1,31 +1,33 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Search, ExternalLink, Menu, ClipboardList, FileText } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Search, Menu, ListChecks } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import ActionCard from '@/components/organisms/ActionCard';
 import ResponsibleChart from '@/components/organisms/ResponsibleChart';
 import SectorChart from '@/components/organisms/SectorChart';
-import StatusChart from '@/components/organisms/StatusChart';
 import ThemeToggle from '@/components/organisms/ThemeToggle';
 import ExportButton from '@/components/organisms/ExportButton';
 import NotificationPanel from '@/components/organisms/NotificationPanel';
 import AdvancedDashboard from '@/components/organisms/AdvancedDashboard';
-import AdvancedFilters from '@/components/organisms/AdvancedFilters';
-import SortingControls, { SortField, SortDirection, sortActionData } from '@/components/organisms/SortingControls';
-import { useProcessedActionData } from '@/hooks/useProcessedActionData';
+import SortingControls from '@/components/organisms/SortingControls';
+import { SortField, SortDirection, sortActionsWithTasks } from '@/lib/sortUtils';
+import { applyFilters, calculateStatusCounts, FilteredActionWithTasks } from '@/lib/filterUtils';
+import { useActionData } from '@/hooks/useActionData';
 import { useStatePersistence } from '@/hooks/useStatePersistence';
 import { Button } from '@/components/ui/button';
 import MobileMenu from '@/components/organisms/MobileMenu';
 import useSidebar from '@/hooks/useSidebar';
-import type { ActionItem } from '@/data/actionData';
 import { planInfo } from '@/data/actionData';
 import { searchInputSchema } from '@/lib/validation';
-import { cn, calculateDelayStatus } from '@/lib/utils';
-import { useCallback } from 'react';
+import { cn } from '@/lib/utils';
 import AIAssistantModal from '@/components/organisms/AIAssistantModal';
 import AssistantONAInsights from '@/components/organisms/AssistantONAInsights';
+import { seedExampleTasks, clearExampleTasks } from '@/utils/seedTasks';
+import { ActionModal } from '@/components/organisms/ActionModal';
+import { ActionItem } from '@/data/actionData';
+import { Plus } from 'lucide-react';
 
 const Index = () => {
-  const processedActionData = useProcessedActionData();
+  const { actions: processedActionData, refresh: refreshActions } = useActionData();
   const {
     saveScrollPosition,
     saveActiveFilters,
@@ -38,12 +40,11 @@ const Index = () => {
   const persistedState = getPersistedState();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedAssistant, setSelectedAssistant] = useState<'gemini' | 'copilot'>('gemini');
-
-  const openModal = (assistant: 'gemini' | 'copilot') => {
-    setSelectedAssistant(assistant);
-    setIsModalOpen(true);
-  };
+  const [selectedAssistant] = useState<'gemini' | 'copilot'>('gemini');
+  
+  // Action modal states
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<ActionItem | undefined>();
 
   const sectionNames: { [key: string]: string } = {
     vision: 'Visão Geral',
@@ -56,18 +57,16 @@ const Index = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [currentFilter, setCurrentFilter] = useState('all');
-  const [isAdvancedFiltersOpen, setIsAdvancedFiltersOpen] = useState(false);
-  const [advancedFilteredData, setAdvancedFilteredData] = useState(processedActionData);
   const [sortField, setSortField] = useState<SortField>('dueDate');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const [sortedData, setSortedData] = useState(processedActionData);
+  const [filteredData, setFilteredData] = useState<FilteredActionWithTasks[]>([]);
 
   // Handler seguro para o campo de busca
   const handleSearchChange = (value: string) => {
     try {
       const validatedValue = searchInputSchema.parse(value);
       setSearchTerm(validatedValue);
-    } catch (error) {
+    } catch {
       // Se a validação falhar, mantém o valor anterior ou limita o tamanho
       const safValue = value.slice(0, 500).replace(/[^\w\s\-.#@(),:]/g, '');
       setSearchTerm(safValue);
@@ -81,7 +80,7 @@ const Index = () => {
     setSection,
   } = useSidebar();
 
-  // Restaurar estado quando o componente for montado
+  // Restaurar estado quando o componente for montado (apenas uma vez)
   useEffect(() => {
     if (persistedState.activeFilters) {
       setCurrentFilter(persistedState.activeFilters.currentFilter || 'all');
@@ -95,6 +94,7 @@ const Index = () => {
       restoreScrollPosition();
     }, 200);
     return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Listener para salvar posição de scroll
@@ -122,51 +122,26 @@ const Index = () => {
     saveSelectedView(activeSection);
   }, [activeSection, saveSelectedView]);
 
+  // Apply filters and sorting with task support
   useEffect(() => {
-    const filtered = advancedFilteredData.filter(item => {
-      const matchesSearch = item.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.responsible.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          item.sector.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      if (currentFilter === 'all') return matchesSearch;
-      
-      // Usar delayStatus calculado para filtrar
-      const calculatedStatus = calculateDelayStatus(item.dueDate, item.status);
-      return matchesSearch && calculatedStatus === currentFilter;
-    });
+    // Apply all filters (search, status, responsible)
+    const filtered = applyFilters(processedActionData, searchTerm, currentFilter);
     
-    const sorted = sortActionData(filtered, sortField, sortDirection);
-    setSortedData(sorted);
-  }, [searchTerm, currentFilter, advancedFilteredData, sortField, sortDirection]);
+    // Sort considering tasks
+    const sorted = sortActionsWithTasks(filtered, sortField, sortDirection);
+    
+    setFilteredData(sorted);
+  }, [searchTerm, currentFilter, processedActionData, sortField, sortDirection]);
 
-  const handleSortChange = useCallback((field, direction) => {
+  const handleSortChange = useCallback((field: SortField, direction: SortDirection) => {
     setSortField(field);
     setSortDirection(direction);
   }, []);
 
-  const handleAdvancedFilterChange = (filteredData: ActionItem[]) => {
-    setAdvancedFilteredData(filteredData);
-  };
-
-  // Calcular contagens para cada status usando delayStatus
+  // Calculate status counts including tasks
   const statusCounts = useMemo(() => {
-    const counts = {
-      all: advancedFilteredData.length,
-      'Em Atraso': 0,
-      'No Prazo': 0,
-      'Concluído': 0
-    };
-    
-    advancedFilteredData.forEach(item => {
-      // Usar delayStatus calculado em vez do status original
-      const calculatedStatus = calculateDelayStatus(item.dueDate, item.status);
-      if (calculatedStatus === 'Em Atraso') counts['Em Atraso']++;
-      else if (calculatedStatus === 'No Prazo') counts['No Prazo']++;
-      else if (calculatedStatus === 'Concluído') counts['Concluído']++;
-    });
-    
-    return counts;
-  }, [advancedFilteredData]);
+    return calculateStatusCounts(processedActionData);
+  }, [processedActionData]);
 
   const filterButtons = [
     { value: 'all', label: 'Todas', count: statusCounts.all },
@@ -189,114 +164,216 @@ const Index = () => {
 
   const renderSection = () => {
     switch (activeSection) {
-      case 'vision':
+      case 'vision': {
         return <AdvancedDashboard data={processedActionData} />;
-      case 'plan':
+      }
+      case 'plan': {
         return (
           <div className="space-y-6">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-4 sm:p-6 transition-smooth">
-              <div className="flex flex-col gap-4 mb-6">
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4">
-                  <div className="relative w-full sm:max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input
-                      placeholder="Buscar por ação, responsável..."
-                      value={searchTerm}
-                      onChange={(e) => handleSearchChange(e.target.value)}
-                      className="pl-9 w-full h-10 transition-smooth"
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 justify-end">
-                    <SortingControls onSortChange={handleSortChange} />
-                    <ExportButton data={processedActionData} filteredData={sortedData} searchTerm={searchTerm} currentFilter={currentFilter} />
+            {/* Header Card with SESI/SENAI Gradient */}
+            <div className="relative overflow-hidden bg-gradient-to-br from-white via-[#164194]/5 to-[#52AE32]/5 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 rounded-3xl shadow-xl border-2 border-slate-200/60 dark:border-slate-700/60 p-6 sm:p-8 transition-all duration-500">
+              {/* Decorative elements - SESI/SENAI colors */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#164194]/10 to-[#52AE32]/10 rounded-full blur-3xl"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-[#52AE32]/10 to-[#E84910]/10 rounded-full blur-3xl"></div>
+              
+              <div className="relative z-10">
+                {/* Title Section - SESI/SENAI colors */}
+                <div className="mb-6">
+                  <h2 className="text-2xl sm:text-3xl font-bold gradient-sesi-text mb-2">
+                    Plano de Ação
+                  </h2>
+                  <p className="text-sm text-slate-600 dark:text-slate-400">
+                    Gerencie e acompanhe todas as ações do projeto
+                  </p>
+                </div>
+
+                {/* Search and Actions Bar */}
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    {/* Search Input */}
+                    <div className="relative flex-1 max-w-md">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                      <Input
+                        placeholder="Buscar ações, responsáveis, setores..."
+                        value={searchTerm}
+                        onChange={(e) => handleSearchChange(e.target.value)}
+                        className="pl-12 h-12 rounded-xl border-2 border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm focus:border-sesi-blue dark:focus:border-sesi-blue transition-all shadow-sm"
+                      />
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 justify-end flex-wrap">
+                      <Button
+                        onClick={() => {
+                          setSelectedAction(undefined);
+                          setIsActionModalOpen(true);
+                        }}
+                        className="h-12 px-6 bg-sesi-green hover:bg-[#52AE32]/90 dark:bg-sesi-green dark:hover:bg-[#52AE32]/90 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                      >
+                        <Plus className="w-5 h-5 mr-2" />
+                        <span className="hidden sm:inline">Nova Ação</span>
+                        <span className="sm:hidden">Nova</span>
+                      </Button>
+                      <SortingControls 
+                        onSortChange={handleSortChange}
+                        sortField={sortField}
+                        sortDirection={sortDirection}
+                      />
+                      <ExportButton data={filteredData} searchTerm={searchTerm} currentFilter={currentFilter} />
+                    </div>
                   </div>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2 mb-6">
+            </div>
+
+            {/* Filters Card */}
+            <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700 p-4 sm:p-5 transition-smooth">
+              <div className="flex flex-wrap items-center gap-3">
                 {filterButtons.map(btn => (
                   <Button
                     key={btn.value}
-                    variant={currentFilter === btn.value ? 'secondary' : 'ghost'}
-                    size="sm"
+                    variant={currentFilter === btn.value ? 'default' : 'outline'}
+                    size="lg"
                     onClick={() => setCurrentFilter(btn.value)}
                     className={cn(
-                      "flex items-center gap-2 relative",
-                      currentFilter === btn.value && "ring-2 ring-primary/20 bg-primary/5 border-primary/30"
+                      "flex items-center gap-3 relative px-5 py-3 rounded-xl font-semibold transition-all duration-300 hover:scale-105 hover:shadow-lg",
+                      currentFilter === btn.value 
+                        ? "gradient-sesi text-white shadow-lg border-0" 
+                        : "bg-white/60 dark:bg-slate-800/60 border-2 border-slate-200 dark:border-slate-700 hover:border-sesi-blue dark:hover:border-sesi-blue"
                     )}
                   >
-                    {btn.label}
+                    <span className="text-sm">{btn.label}</span>
                     <span className={cn(
-                      "px-2 py-0.5 rounded-full text-xs font-semibold",
+                      "px-2.5 py-1 rounded-lg text-xs font-bold shadow-sm",
                       currentFilter === btn.value 
-                        ? "bg-primary text-primary-foreground" 
-                        : "bg-primary/10 text-primary"
+                        ? "bg-white/20 text-white backdrop-blur-sm" 
+                        : "bg-gradient-to-r from-[#164194]/10 to-[#52AE32]/10 dark:from-[#164194]/30 dark:to-[#52AE32]/30 text-[#164194] dark:text-[#4a7bc8]"
                     )}>
                       {btn.count}
                     </span>
                     {currentFilter === btn.value && (
-                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-2 h-2 bg-white rounded-full shadow-lg" />
                     )}
                   </Button>
                 ))}
               </div>
-              {sortedData.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6 animate-fade-in">
-                  {sortedData.map(item => <ActionCard key={item.id} action={item} />)}
+            </div>
+
+            {/* Actions Grid */}
+            <div className="relative">
+              {/* Background decoration - SESI/SENAI colors */}
+              <div className="absolute inset-0 bg-gradient-to-br from-[#164194]/5 via-transparent to-[#52AE32]/5 dark:from-[#164194]/10 dark:via-transparent dark:to-[#52AE32]/10 rounded-3xl -z-10"></div>
+              {filteredData.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-5 sm:gap-6 animate-fade-in">
+                  {filteredData.map(item => (
+                    <ActionCard 
+                      key={item.id} 
+                      action={item}
+                      shouldExpandTasks={item.shouldExpandTasks}
+                      onEdit={(action) => {
+                        setSelectedAction(action);
+                        setIsActionModalOpen(true);
+                      }}
+                    />
+                  ))}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12 sm:py-16 px-4 animate-fade-in">
-                  <div className="text-center max-w-md">
-                    <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center transition-smooth">
-                      <Search className="w-6 h-6 sm:w-8 sm:h-8 text-slate-400 dark:text-slate-500" />
+                <div className="flex flex-col items-center justify-center py-16 sm:py-20 px-4 animate-fade-in">
+                  <div className="text-center max-w-lg">
+                    <div className="relative w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6">
+                      <div className="absolute inset-0 bg-gradient-to-br from-[#164194]/20 to-[#52AE32]/20 rounded-full blur-xl"></div>
+                      <div className="relative w-full h-full bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-700 dark:to-slate-800 rounded-full flex items-center justify-center shadow-lg">
+                        <Search className="w-10 h-10 sm:w-12 sm:h-12 text-[#164194] dark:text-[#4a7bc8]" />
+                      </div>
                     </div>
-                    <h3 className="typography-heading-3 text-slate-700 dark:text-slate-300 mb-2">
-                      Não há ações disponíveis para seleção
+                    <h3 className="text-xl sm:text-2xl font-bold gradient-sesi-text mb-3">
+                      Nenhuma ação encontrada
                     </h3>
-                    <p className="typography-body-md text-slate-500 dark:text-slate-400 max-w-md">
+                    <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 mb-6">
                       {currentFilter === 'all' 
-                        ? 'Nenhuma ação foi encontrada com os critérios de busca atuais.'
-                        : `Nenhuma ação foi encontrada para o filtro "${filterButtons.find(btn => btn.value === currentFilter)?.label}" com os critérios de busca atuais.`
+                        ? 'Nenhuma ação corresponde aos critérios de busca atuais.'
+                        : `Nenhuma ação encontrada para o filtro "${filterButtons.find(btn => btn.value === currentFilter)?.label}".`
                       }
                     </p>
+                    <Button
+                      onClick={() => {
+                        setSearchTerm('');
+                        setCurrentFilter('all');
+                      }}
+                      variant="outline"
+                      className="rounded-xl border-2 hover:border-sesi-blue dark:hover:border-sesi-blue hover:text-sesi-blue dark:hover:text-sesi-blue"
+                    >
+                      Limpar Filtros
+                    </Button>
                   </div>
                 </div>
               )}
             </div>
-          </div>
+            </div>
         );
-      case 'responsible':
+      }
+      case 'responsible': {
         return (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 border-b border-slate-200 dark:border-slate-600">
-              <h2 className="typography-heading-2 text-slate-900 dark:text-slate-100">Análise por Responsável</h2>
-            </div>
-            <div className="p-6">
-              <ResponsibleChart data={processedActionData} />
+          <div className="relative overflow-hidden bg-gradient-to-br from-white via-[#164194]/5 to-[#52AE32]/5 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 rounded-3xl shadow-xl border-2 border-slate-200/60 dark:border-slate-700/60 transition-all duration-500">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#164194]/10 to-[#52AE32]/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-[#52AE32]/10 to-[#E84910]/10 rounded-full blur-3xl"></div>
+            
+            <div className="relative z-10">
+              <div className="bg-gradient-to-r from-[#164194]/5 to-[#52AE32]/5 dark:from-[#164194]/10 dark:to-[#52AE32]/10 px-6 sm:px-8 py-6 border-b-2 border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl sm:text-3xl font-bold gradient-sesi-text mb-2">Análise por Responsável</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Visualize a distribuição de ações por responsável
+                </p>
+              </div>
+              <div className="p-6 sm:p-8">
+                <ResponsibleChart />
+              </div>
             </div>
           </div>
         );
-      case 'sector':
+      }
+      case 'sector': {
         return (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-            <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 border-b border-slate-200 dark:border-slate-600">
-              <h2 className="typography-heading-2 text-slate-900 dark:text-slate-100">Análise por Setor</h2>
-            </div>
-            <div className="p-6">
-              <SectorChart data={processedActionData} />
+          <div className="relative overflow-hidden bg-gradient-to-br from-white via-[#164194]/5 to-[#52AE32]/5 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 rounded-3xl shadow-xl border-2 border-slate-200/60 dark:border-slate-700/60 transition-all duration-500">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#164194]/10 to-[#52AE32]/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-[#52AE32]/10 to-[#E84910]/10 rounded-full blur-3xl"></div>
+            
+            <div className="relative z-10">
+              <div className="bg-gradient-to-r from-[#164194]/5 to-[#52AE32]/5 dark:from-[#164194]/10 dark:to-[#52AE32]/10 px-6 sm:px-8 py-6 border-b-2 border-slate-200 dark:border-slate-700">
+                <h2 className="text-2xl sm:text-3xl font-bold gradient-sesi-text mb-2">Análise por Setor</h2>
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  Visualize a distribuição de ações por setor
+                </p>
+              </div>
+              <div className="p-6 sm:p-8">
+                <SectorChart />
+              </div>
             </div>
           </div>
         );
-      case 'insights':
+      }
+      case 'insights': {
         return <AssistantONAInsights />;
-      case 'settings':
+      }
+      case 'settings': {
         return (
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
-            <h2 className="typography-heading-2 text-slate-900 dark:text-slate-100 mb-4">Configurações</h2>
-            <p className="typography-body-md text-slate-600 dark:text-slate-400">Esta seção está em desenvolvimento.</p>
+          <div className="relative overflow-hidden bg-gradient-to-br from-white via-[#164194]/5 to-[#52AE32]/5 dark:from-slate-800 dark:via-slate-800 dark:to-slate-900 rounded-3xl shadow-xl border-2 border-slate-200/60 dark:border-slate-700/60 p-6 sm:p-8 transition-all duration-500">
+            {/* Decorative elements */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#164194]/10 to-[#52AE32]/10 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-[#52AE32]/10 to-[#E84910]/10 rounded-full blur-3xl"></div>
+            
+            <div className="relative z-10">
+              <h2 className="text-2xl sm:text-3xl font-bold gradient-sesi-text mb-4">Configurações</h2>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Esta seção está em desenvolvimento.</p>
+            </div>
           </div>
         );
-      default:
+      }
+      default: {
         return null;
+      }
     }
   };
 
@@ -316,31 +393,35 @@ const Index = () => {
       
       <div className="flex-1 flex flex-col min-h-screen w-full">
           <header className="sticky top-0 z-40">
-            <div className="bg-white/98 dark:bg-slate-900/98 backdrop-blur-lg border-b border-slate-200/60 dark:border-slate-700/60 shadow-sm transition-smooth">
+            {/* Barra decorativa superior */}
+            <div className="h-1 bg-gradient-to-r from-[#164194] via-[#52AE32] to-[#E84910]"></div>
+            
+            <div className="bg-white/98 dark:bg-slate-900/98 backdrop-blur-lg border-b border-slate-200/60 dark:border-slate-700/60 shadow-lg transition-smooth">
               <div className="px-3 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-14 sm:h-16">
-                  <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                <div className="flex items-center justify-between h-16 sm:h-18">
+                  <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
                     <Button
                       variant="ghost"
                       size="icon"
                       onClick={toggleMobile}
-                      className="p-2 h-auto hover-lift"
+                      className="p-2 h-auto hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all duration-300"
                     >
-                      <Menu className="w-5 h-5" />
+                      <Menu className="w-5 h-5 text-slate-700 dark:text-slate-300" />
                     </Button>
                     
-                    <div className="hidden sm:flex items-center gap-3 text-sm min-w-0">
+                    <div className="hidden sm:flex items-center gap-4 text-sm min-w-0">
                       <img 
-                        src="/images/sesi-senai-logomarca-nova.png" 
+                        src="/images/sesi-senai-logo.png" 
                         alt="SESI SENAI" 
-                        className="sesi-senai-logo logo-header transition-smooth"
+                        className="h-9 w-auto object-contain hover:scale-105 transition-all duration-300 drop-shadow-sm"
                       />
-                      <span className="text-slate-400 dark:text-slate-500 mx-1">|</span>
+                      <div className="w-px h-10 bg-gradient-to-b from-transparent via-slate-300 dark:via-slate-600 to-transparent"></div>
                       <div className="flex flex-col min-w-0">
-                        <span className="text-blue-700 dark:text-blue-300 font-bold tracking-wide truncate">
-                          {planInfo.name}
+                        <span className="text-[#164194] dark:text-[#4a7bc8] font-bold text-base tracking-wide truncate">
+                          Manutenção da Certificação ONA 2026
                         </span>
-                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <span className="text-xs text-slate-500 dark:text-slate-400 truncate flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#52AE32] animate-pulse"></span>
                           {sectionNames[activeSection] || 'Visão Geral'}
                         </span>
                       </div>
@@ -348,8 +429,8 @@ const Index = () => {
                     
                     {/* Mobile section title */}
                     <div className="sm:hidden flex flex-col min-w-0 flex-1">
-                      <span className="text-blue-700 dark:text-blue-300 font-bold text-sm truncate">
-                        {planInfo.name}
+                      <span className="text-[#164194] dark:text-[#4a7bc8] font-bold text-sm truncate">
+                        ONA 2026
                       </span>
                       <span className="text-xs text-slate-500 dark:text-slate-400 truncate">
                         {sectionNames[activeSection] || 'Visão Geral'}
@@ -357,14 +438,14 @@ const Index = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-1 sm:gap-3">
+                  <div className="flex items-center gap-2 sm:gap-3">
                     <a
                       href={planInfo.epaLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden md:inline-flex items-center gap-2 px-3 sm:px-4 py-2 text-sm font-semibold text-white bg-blue-600 dark:bg-blue-700 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-200 shadow-sm hover:shadow-md hover-lift"
+                      className="hidden md:inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#164194] to-[#0EA5E9] rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-300 shadow-md"
                     >
-                      <ClipboardList className="w-4 h-4" />
+                      <ListChecks className="w-4 h-4" />
                       <span className="hidden lg:inline">Plano de Ação do EPA</span>
                       <span className="lg:hidden">EPA</span>
                     </a>
@@ -374,11 +455,37 @@ const Index = () => {
                       href={planInfo.epaLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="md:hidden inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold text-white bg-blue-600 dark:bg-blue-700 rounded-md hover:bg-blue-700 dark:hover:bg-blue-600 transition-all duration-200"
+                      className="md:hidden inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#164194] to-[#0EA5E9] rounded-lg hover:shadow-md transition-all duration-300"
                     >
-                      <ClipboardList className="w-3 h-3" />
+                      <ListChecks className="w-3.5 h-3.5" />
                       EPA
                     </a>
+                    
+                    {/* Botões de Teste */}
+                    <div className="hidden lg:flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          seedExampleTasks();
+                          window.location.reload();
+                        }}
+                        className="text-xs"
+                      >
+                        ➕ Criar Tarefas Exemplo
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          clearExampleTasks();
+                          window.location.reload();
+                        }}
+                        className="text-xs"
+                      >
+                        🗑️ Limpar Tarefas
+                      </Button>
+                    </div>
                     
                     <NotificationPanel data={processedActionData} />
                     <ThemeToggle />
@@ -407,6 +514,19 @@ const Index = () => {
             </div>
           </footer>
       </div>
+      
+      {/* Action Modal */}
+      <ActionModal
+        isOpen={isActionModalOpen}
+        onClose={() => {
+          setIsActionModalOpen(false);
+          setSelectedAction(undefined);
+        }}
+        onSuccess={() => {
+          refreshActions();
+        }}
+        action={selectedAction}
+      />
     </div>
   );
 };

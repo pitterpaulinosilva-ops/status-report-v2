@@ -15,12 +15,19 @@ import {
   Send, 
   Clock, 
   FileText,
-  Eye
+  Eye,
+  Edit,
+  ListChecks,
+  Plus
 } from 'lucide-react';
 import { ActionItem } from '@/data/actionData';
+import { Task } from '@/types/task';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { setSecureItem, getSecureItem } from '@/lib/encryption';
+import { useTaskData } from '@/hooks/useTaskData';
+import { TaskProgressBar } from './TaskProgressBar';
+import { TaskModal } from './TaskModal';
 
 interface Comment {
   id: string;
@@ -36,21 +43,27 @@ interface Comment {
 interface ActionDetailsModalProps {
   action: ActionItem;
   onUpdate?: (actionId: string, updates: Partial<ActionItem>) => void;
+  onEdit?: () => void;
 }
 
-const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdate }) => {
+const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdate, onEdit }) => {
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [currentUser] = useState('Usuário Atual');
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  
+  // Task management
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | undefined>();
+  const { tasks, stats, refresh } = useTaskData(action.id);
 
   // Load comments from localStorage with encryption on component mount
   useEffect(() => {
     const commentsKey = `comments_${action.id}`;
     
     // Tentar carregar comentários criptografados
-    const decryptedComments = getSecureItem<Array<Omit<Comment, 'timestamp'> & { timestamp: string }>>(commentsKey);
+    const decryptedComments = getSecureItem<Array<Omit<Comment, 'timestamp' | 'actionId'> & { timestamp: string; actionId: string }>>(commentsKey);
     if (decryptedComments) {
       const parsed: Comment[] = decryptedComments.map((comment) => ({
         ...comment,
@@ -64,7 +77,7 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
     const savedComments = localStorage.getItem(commentsKey);
     if (savedComments) {
       try {
-        const parsedRaw = JSON.parse(savedComments) as Array<Omit<Comment, 'timestamp'> & { timestamp: string }>;
+        const parsedRaw = JSON.parse(savedComments) as Array<Omit<Comment, 'timestamp' | 'actionId'> & { timestamp: string; actionId: string }>;
         const parsed: Comment[] = parsedRaw.map((comment) => ({
           ...comment,
           timestamp: new Date(comment.timestamp)
@@ -99,7 +112,7 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
 
     const comment: Comment = {
       id: Date.now().toString(),
-      actionId: action.id,
+      actionId: action.id.toString(),
       author: currentUser,
       content: newComment.trim(),
       timestamp: new Date(),
@@ -170,16 +183,40 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
       
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <DialogTitle className="typography-heading-2 font-bold text-gray-800 dark:text-gray-100">
-            Ação - Cód: {action.id}
-          </DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="typography-heading-2 font-bold text-gray-800 dark:text-gray-100">
+              Ação - Cód: {action.id}
+            </DialogTitle>
+            {onEdit && (
+              <Button
+                onClick={() => {
+                  setIsOpen(false);
+                  onEdit();
+                }}
+                size="sm"
+                variant="outline"
+                className="ml-4"
+              >
+                ✏️ Editar Ação
+              </Button>
+            )}
+          </div>
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
               Detalhes
+            </TabsTrigger>
+            <TabsTrigger value="tasks" className="flex items-center gap-2">
+              <ListChecks className="h-4 w-4" />
+              Tarefas
+              {tasks.length > 0 && (
+                <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  {tasks.length}
+                </Badge>
+              )}
             </TabsTrigger>
             <TabsTrigger value="comments" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
@@ -336,6 +373,126 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
             </div>
           </TabsContent>
 
+          <TabsContent value="tasks" className="flex-1 overflow-y-auto mt-4">
+            <div className="space-y-4">
+              {/* Header com botão de adicionar */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="typography-heading-3 font-bold text-gray-800 dark:text-gray-100">
+                    Tarefas da Ação
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Gerencie as tarefas relacionadas a esta ação
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setSelectedTask(undefined);
+                    setIsTaskModalOpen(true);
+                  }}
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Nova Tarefa
+                </Button>
+              </div>
+
+              {/* Progress Bar */}
+              {tasks.length > 0 && (
+                <Card>
+                  <CardContent className="p-4">
+                    <TaskProgressBar
+                      total={stats.total}
+                      completed={stats.completed}
+                      overdue={stats.overdue}
+                      onTime={stats.onTime}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Task List */}
+              {tasks.length > 0 ? (
+                <div className="space-y-3">
+                  {tasks.map(task => (
+                    <Card 
+                      key={task.id}
+                      className="cursor-pointer hover:shadow-md transition-all"
+                      onClick={() => {
+                        setSelectedTask(task);
+                        setIsTaskModalOpen(true);
+                      }}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 truncate">
+                                {task.title}
+                              </h4>
+                              <Badge className={
+                                task.delayStatus === 'Em Atraso' 
+                                  ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
+                                  : task.delayStatus === 'Concluído'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
+                                  : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                              }>
+                                {task.delayStatus}
+                              </Badge>
+                            </div>
+                            {task.description && (
+                              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2 line-clamp-2">
+                                {task.description}
+                              </p>
+                            )}
+                            <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                              <span className="flex items-center gap-1">
+                                <User className="w-3 h-3" />
+                                {task.responsible}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-3 h-3" />
+                                {task.dueDate}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Building2 className="w-3 h-3" />
+                                {task.sector}
+                              </span>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedTask(task);
+                              setIsTaskModalOpen(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="p-8">
+                    <div className="text-center text-muted-foreground">
+                      <ListChecks className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p className="font-medium">Nenhuma tarefa cadastrada</p>
+                      <p className="text-sm mt-1">
+                        Clique em "Nova Tarefa" para adicionar a primeira tarefa desta ação
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </TabsContent>
+
           <TabsContent value="comments" className="flex-1 flex flex-col overflow-hidden mt-4">
             <div className="flex-1 flex flex-col gap-4 overflow-hidden">
               {/* Stats */}
@@ -433,6 +590,20 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* Task Modal */}
+        <TaskModal
+          isOpen={isTaskModalOpen}
+          onClose={() => {
+            setIsTaskModalOpen(false);
+            setSelectedTask(undefined);
+          }}
+          onSuccess={() => {
+            refresh();
+          }}
+          parentActionId={action.id}
+          task={selectedTask}
+        />
       </DialogContent>
     </Dialog>
   );

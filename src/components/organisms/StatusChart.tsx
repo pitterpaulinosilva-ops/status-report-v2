@@ -1,15 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Label } from 'recharts';
-import { AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Clock3 } from 'lucide-react';
 import { useProcessedActionData } from '@/hooks/useProcessedActionData';
-import { CHART_COLORS, getStatusColor } from '@/utils/chartColors';
+import { getStatusColor } from '@/utils/chartColors';
 
 const StatusChart = () => {
   const processedActionData = useProcessedActionData();
-
-  // Usando o sistema de cores consistente
-  const STATUS_COLORS = CHART_COLORS.status;
 
   // Calculate statistics by delay status - usando os dados processados diretamente
   const statsByStatus = processedActionData.reduce((acc, item) => {
@@ -24,7 +21,7 @@ const StatusChart = () => {
 
   // Prepare data for pie chart - only include statuses that have actions
   const chartData = Object.entries(statsByStatus || {})
-    .filter(([_, count]) => count > 0)
+    .filter(([, count]) => count > 0)
     .map(([status, count]) => ({
       name: status,
       value: count,
@@ -39,11 +36,11 @@ const StatusChart = () => {
       case 'Em Atraso':
         return <AlertCircle className="w-3 h-3 sm:w-4 sm:h-4" />;
       case 'No Prazo':
-        return <Clock className="w-3 h-3 sm:w-4 sm:h-4" />;
+        return <Clock3 className="w-3 h-3 sm:w-4 sm:h-4" />;
       case 'Concluído':
-        return <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />;
+        return <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />;
       default:
-        return <Clock className="w-3 h-3 sm:w-4 sm:h-4" />;
+        return <Clock3 className="w-3 h-3 sm:w-4 sm:h-4" />;
     }
   };
 

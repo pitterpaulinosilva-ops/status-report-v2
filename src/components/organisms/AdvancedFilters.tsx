@@ -5,10 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { X, Filter, Calendar, Users, Building2 } from 'lucide-react';
+import { X, Filter, CalendarCheck2, Users2, Building2 } from 'lucide-react';
 import { ActionItem } from '@/data/actionData';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
 
 interface AdvancedFiltersProps {
   data: ActionItem[];
@@ -42,7 +40,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
   // Extrair valores únicos dos dados
   const uniqueResponsibles = [...new Set(data.map(item => item.responsible))].sort();
   const uniqueSectors = [...new Set(data.map(item => item.sector))].sort();
-  const uniqueStatuses = [...new Set(data.map(item => item.status))].sort();
 
   const applyFilters = () => {
     let filtered = data;
@@ -118,13 +115,6 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
     }));
   };
 
-  const removeStatus = (status: string) => {
-    setFilters(prev => ({
-      ...prev,
-      selectedStatuses: prev.selectedStatuses.filter(s => s !== status)
-    }));
-  };
-
   const hasActiveFilters = 
     filters.dateFrom || 
     filters.dateTo || 
@@ -177,7 +167,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             {/* Filtros de Data */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-medium">
-                <Calendar className="h-4 w-4" />
+                <CalendarCheck2 className="h-4 w-4" />
                 Período
               </Label>
               <div className="grid grid-cols-2 gap-2">
@@ -207,7 +197,7 @@ const AdvancedFilters: React.FC<AdvancedFiltersProps> = ({
             {/* Filtro de Responsáveis */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-medium">
-                <Users className="h-4 w-4" />
+                <Users2 className="h-4 w-4" />
                 Responsáveis
               </Label>
               <Select

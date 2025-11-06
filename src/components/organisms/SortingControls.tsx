@@ -1,21 +1,21 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 import { ActionItem } from '@/data/actionData';
 
 export type SortField = 'action' | 'responsible' | 'sector' | 'dueDate' | 'status' | 'id';
 export type SortDirection = 'asc' | 'desc';
 
 interface SortingControlsProps {
-  sortField: SortField;
-  sortDirection: SortDirection;
   onSortChange: (field: SortField, direction: SortDirection) => void;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
 }
 
 const SortingControls: React.FC<SortingControlsProps> = ({
-  sortField,
-  sortDirection,
+  sortField = 'dueDate',
+  sortDirection = 'asc',
   onSortChange
 }) => {
   const sortOptions = [
@@ -111,35 +111,31 @@ export const sortActionData = (
         aValue = a.sector.toLowerCase();
         bValue = b.sector.toLowerCase();
         break;
-      case 'dueDate':
+      case 'dueDate': {
         // Converter data do formato DD/MM/YYYY para Date para comparação
         const parseDate = (dateStr: string) => {
           const [day, month, year] = dateStr.split('/');
           return new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
         };
-        {
-          // Evitar declarações léxicas soltas diretamente no case (no-case-declarations)
-          const aDate = parseDate(a.dueDate);
-          const bDate = parseDate(b.dueDate);
-          aValue = aDate;
-          bValue = bDate;
-        }
+        const aDate = parseDate(a.dueDate);
+        const bDate = parseDate(b.dueDate);
+        aValue = aDate;
+        bValue = bDate;
         break;
-      case 'status':
+      }
+      case 'status': {
         // Definir ordem de prioridade para status
         const statusOrder: Record<string, number> = {
           'Em Andamento': 1,
           'Planejado': 2,
           'Concluído': 3
         };
-        {
-          // Evitar declarações léxicas soltas diretamente no case (no-case-declarations)
-          const aStatus = statusOrder[a.status] ?? 999;
-          const bStatus = statusOrder[b.status] ?? 999;
-          aValue = aStatus;
-          bValue = bStatus;
-        }
+        const aStatus = statusOrder[a.status] ?? 999;
+        const bStatus = statusOrder[b.status] ?? 999;
+        aValue = aStatus;
+        bValue = bStatus;
         break;
+      }
       default:
         aValue = a.id;
         bValue = b.id;

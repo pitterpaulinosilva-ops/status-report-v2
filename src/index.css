@@ -52,14 +52,19 @@
 
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Professional Color System */
-    --brand-primary: 220 100% 50%;
-    --brand-secondary: 200 100% 45%;
-    --brand-accent: 280 100% 60%;
+    /* SESI/SENAI Official Brand Colors */
+    --sesi-blue: 220 75% 33%; /* #164194 - Azul SESI/SENAI */
+    --sesi-green: 106 55% 44%; /* #52AE32 - Verde SESI */
+    --senai-orange: 16 93% 50%; /* #E84910 - Laranja SENAI */
     
-    --success: 142 76% 36%;
+    /* Professional Color System */
+    --brand-primary: 220 75% 33%; /* SESI/SENAI Blue */
+    --brand-secondary: 106 55% 44%; /* SESI Green */
+    --brand-accent: 16 93% 50%; /* SENAI Orange */
+    
+    --success: 106 55% 44%; /* Using SESI Green */
     --warning: 38 92% 50%;
-    --info: 199 89% 48%;
+    --info: 220 75% 33%; /* Using SESI/SENAI Blue */
     
     --surface-elevated: 0 0% 98%;
     --surface-container: 0 0% 96%;
@@ -112,14 +117,19 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
 
-    /* Professional Color System - Dark Mode */
-    --brand-primary: 220 100% 60%;
-    --brand-secondary: 200 100% 55%;
-    --brand-accent: 280 100% 70%;
+    /* SESI/SENAI Official Brand Colors - Dark Mode */
+    --sesi-blue: 220 75% 45%; /* Lighter for dark mode */
+    --sesi-green: 106 55% 54%; /* Lighter for dark mode */
+    --senai-orange: 16 93% 60%; /* Lighter for dark mode */
     
-    --success: 142 76% 46%;
+    /* Professional Color System - Dark Mode */
+    --brand-primary: 220 75% 45%; /* SESI/SENAI Blue */
+    --brand-secondary: 106 55% 54%; /* SESI Green */
+    --brand-accent: 16 93% 60%; /* SENAI Orange */
+    
+    --success: 106 55% 54%; /* Using SESI Green */
     --warning: 38 92% 60%;
-    --info: 199 89% 58%;
+    --info: 220 75% 45%; /* Using SESI/SENAI Blue */
     
     --surface-elevated: 220 13% 8%;
     --surface-container: 220 13% 6%;
@@ -374,6 +384,66 @@
 
   .professional-gradient {
     background: linear-gradient(135deg, hsl(var(--brand-primary) / 0.1), hsl(var(--brand-secondary) / 0.1));
+  }
+
+  /* SESI/SENAI Brand Color Utilities */
+  .text-sesi-blue {
+    color: hsl(var(--sesi-blue));
+  }
+
+  .bg-sesi-blue {
+    background-color: hsl(var(--sesi-blue));
+  }
+
+  .border-sesi-blue {
+    border-color: hsl(var(--sesi-blue));
+  }
+
+  .text-sesi-green {
+    color: hsl(var(--sesi-green));
+  }
+
+  .bg-sesi-green {
+    background-color: hsl(var(--sesi-green));
+  }
+
+  .border-sesi-green {
+    border-color: hsl(var(--sesi-green));
+  }
+
+  .text-senai-orange {
+    color: hsl(var(--senai-orange));
+  }
+
+  .bg-senai-orange {
+    background-color: hsl(var(--senai-orange));
+  }
+
+  .border-senai-orange {
+    border-color: hsl(var(--senai-orange));
+  }
+
+  /* SESI/SENAI Gradient Utilities */
+  .gradient-sesi {
+    background: linear-gradient(135deg, hsl(var(--sesi-blue)), hsl(var(--sesi-green)));
+  }
+
+  .gradient-senai {
+    background: linear-gradient(135deg, hsl(var(--sesi-blue)), hsl(var(--senai-orange)));
+  }
+
+  .gradient-sesi-text {
+    background: linear-gradient(135deg, hsl(var(--sesi-blue)), hsl(var(--sesi-green)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .gradient-senai-text {
+    background: linear-gradient(135deg, hsl(var(--sesi-blue)), hsl(var(--senai-orange)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 }
 

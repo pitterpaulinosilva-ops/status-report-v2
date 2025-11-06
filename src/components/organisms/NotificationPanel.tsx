@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Bell, X, AlertTriangle, Clock, Calendar } from 'lucide-react';
+import { BellDot, X, AlertTriangle, Clock3, CalendarCheck2, AlertCircle, TrendingDown, Users2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ActionItem } from '@/data/actionData';
-import { parse, differenceInDays, isAfter, isBefore, addDays } from 'date-fns';
+import { parse, differenceInDays, isAfter } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface NotificationPanelProps {
   data: ActionItem[];
@@ -16,9 +17,10 @@ interface NotificationItem {
   responsible: string;
   dueDate: string;
   daysUntilDue: number;
-  priority: 'high' | 'medium' | 'low';
-  type: 'overdue' | 'due-soon' | 'due-today' | 'comment';
+  priority: 'critical' | 'high' | 'medium' | 'low';
+  type: 'overdue' | 'due-soon' | 'due-today' | 'comment' | 'critical-delay';
   commentDetails?: { author: string; text: string; timestamp: string };
+  delayStatus?: string;
 }
 
 const NotificationPanel = ({ data }: NotificationPanelProps) => {
@@ -42,18 +44,35 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
             const daysUntilDue = differenceInDays(dueDate, today);
             
             let shouldNotify = false;
-            let type: 'overdue' | 'due-soon' | 'due-today' = 'due-soon';
-            let priority: 'high' | 'medium' | 'low' = 'low';
+            let type: 'overdue' | 'due-soon' | 'due-today' | 'critical-delay' = 'due-soon';
+            let priority: 'critical' | 'high' | 'medium' | 'low' = 'low';
             
-            if (isAfter(today, dueDate)) {
+            // Atraso crítico (mais de 30 dias)
+            if (isAfter(today, dueDate) && Math.abs(daysUntilDue) > 30) {
+              shouldNotify = true;
+              type = 'critical-delay';
+              priority = 'critical';
+            }
+            // Atraso severo (15-30 dias)
+            else if (isAfter(today, dueDate) && Math.abs(daysUntilDue) > 15) {
+              shouldNotify = true;
+              type = 'overdue';
+              priority = 'critical';
+            }
+            // Atraso (qualquer dia)
+            else if (isAfter(today, dueDate)) {
               shouldNotify = true;
               type = 'overdue';
               priority = 'high';
-            } else if (daysUntilDue === 0) {
+            }
+            // Vence hoje
+            else if (daysUntilDue === 0) {
               shouldNotify = true;
               type = 'due-today';
               priority = 'high';
-            } else if (daysUntilDue <= 7 && daysUntilDue > 0) {
+            }
+            // Vence em breve (1-7 dias)
+            else if (daysUntilDue <= 7 && daysUntilDue > 0) {
               shouldNotify = true;
               type = 'due-soon';
               priority = daysUntilDue <= 3 ? 'high' : 'medium';
@@ -67,38 +86,21 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
                 dueDate: action.dueDate,
                 daysUntilDue,
                 priority,
-                type
+                type,
+                delayStatus: action.delayStatus
               });
             }
           } catch (error) {
             console.warn('Erro ao processar data da ação:', action.id, error);
           }
         }
-
-        action.comments?.forEach((comment, index) => {
-          const commentId = `comment-${action.id}-${index}`;
-          if (!dismissedNotifications.has(commentId)) {
-            notificationItems.push({
-              id: action.id,
-              action: action.action,
-              responsible: action.responsible,
-              dueDate: action.dueDate,
-              daysUntilDue: 0, // Not applicable for comments
-              priority: 'medium', // Or any other logic
-              type: 'comment',
-              commentDetails: comment,
-            });
-          }
-        });
       });
       
       notificationItems.sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
+        const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
         if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
           return priorityOrder[b.priority] - priorityOrder[a.priority];
         }
-        if (a.type === 'comment' && b.type !== 'comment') return 1; 
-        if (a.type !== 'comment' && b.type === 'comment') return -1;
         return a.daysUntilDue - b.daysUntilDue;
       });
       
@@ -118,19 +120,24 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
 
   const getNotificationIcon = (type: string) => {
     switch (type) {
+      case 'critical-delay':
+        return <AlertCircle className="w-4 h-4 text-red-600 animate-pulse" />;
       case 'overdue':
         return <AlertTriangle className="w-4 h-4 text-red-500" />;
       case 'due-today':
-        return <Calendar className="w-4 h-4 text-orange-500" />;
+        return <CalendarCheck2 className="w-4 h-4 text-orange-500" />;
       case 'due-soon':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
+        return <Clock3 className="w-4 h-4 text-yellow-500" />;
       default:
-        return <Bell className="w-4 h-4" />;
+        return <BellDot className="w-4 h-4" />;
     }
   };
 
   const getNotificationMessage = (notification: NotificationItem) => {
-    if (notification.type === 'overdue') {
+    if (notification.type === 'critical-delay') {
+      const daysOverdue = Math.abs(notification.daysUntilDue);
+      return `🚨 CRÍTICO: ${daysOverdue} dias de atraso`;
+    } else if (notification.type === 'overdue') {
       const daysOverdue = Math.abs(notification.daysUntilDue);
       return `Em atraso há ${daysOverdue} dia${daysOverdue !== 1 ? 's' : ''}`;
     } else if (notification.type === 'due-today') {
@@ -142,8 +149,10 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
+      case 'critical':
+        return 'bg-red-600 text-white dark:bg-red-700 dark:text-white font-bold animate-pulse';
       case 'high':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 font-semibold';
       case 'medium':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
       case 'low':
@@ -153,7 +162,8 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
     }
   };
 
-  const highPriorityCount = notifications.filter(n => n.priority === 'high').length;
+  const criticalCount = notifications.filter(n => n.priority === 'critical').length;
+  const overdueCount = notifications.filter(n => n.type === 'overdue' || n.type === 'critical-delay').length;
 
   return (
     <div className="relative">
@@ -166,7 +176,7 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
           notifications.length > 0 ? 'animate-pulse' : ''
         }`}
       >
-        <Bell className="w-5 h-5" />
+        <BellDot className="w-5 h-5" />
         {notifications.length > 0 && (
           <Badge 
             variant="destructive" 
@@ -181,16 +191,11 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 z-50">
           <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-xl">
-            <CardHeader className="pb-3">
+            <CardHeader className="pb-3 space-y-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg flex items-center">
-                  <Bell className="w-5 h-5 mr-2 text-blue-600" />
-                  Notificações
-                  {highPriorityCount > 0 && (
-                    <Badge variant="destructive" className="ml-2">
-                      {highPriorityCount} urgente{highPriorityCount !== 1 ? 's' : ''}
-                    </Badge>
-                  )}
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <BellDot className="w-5 h-5 text-blue-600" />
+                  Alertas e Notificações
                 </CardTitle>
                 <Button
                   variant="ghost"
@@ -201,11 +206,50 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
                   <X className="w-4 h-4" />
                 </Button>
               </div>
+              
+              {/* Estatísticas de Alertas */}
+              {notifications.length > 0 && (
+                <div className="grid grid-cols-3 gap-2">
+                  {criticalCount > 0 && (
+                    <div className="bg-red-50 dark:bg-red-950/30 rounded-lg p-2 border border-red-200 dark:border-red-800">
+                      <div className="flex items-center gap-1.5">
+                        <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                        <div>
+                          <p className="text-xs font-semibold text-red-900 dark:text-red-100">Críticos</p>
+                          <p className="text-lg font-bold text-red-600 dark:text-red-400">{criticalCount}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {overdueCount > 0 && (
+                    <div className="bg-orange-50 dark:bg-orange-950/30 rounded-lg p-2 border border-orange-200 dark:border-orange-800">
+                      <div className="flex items-center gap-1.5">
+                        <TrendingDown className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                        <div>
+                          <p className="text-xs font-semibold text-orange-900 dark:text-orange-100">Atrasados</p>
+                          <p className="text-lg font-bold text-orange-600 dark:text-orange-400">{overdueCount}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-2 border border-blue-200 dark:border-blue-800">
+                    <div className="flex items-center gap-1.5">
+                      <BellDot className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                      <div>
+                        <p className="text-xs font-semibold text-blue-900 dark:text-blue-100">Total</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{notifications.length}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardHeader>
             <CardContent className="p-0">
               {notifications.length === 0 ? (
                 <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-                  <Bell className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <BellDot className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p>Nenhuma notificação no momento</p>
                   <p className="text-sm mt-1">Todas as ações estão em dia!</p>
                 </div>
@@ -214,33 +258,57 @@ const NotificationPanel = ({ data }: NotificationPanelProps) => {
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className="p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+                      className={cn(
+                        "p-4 border-b border-slate-200 dark:border-slate-700 last:border-b-0 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors",
+                        notification.priority === 'critical' && "bg-red-50/50 dark:bg-red-950/20 border-l-4 border-l-red-600"
+                      )}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-2">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
                             {getNotificationIcon(notification.type)}
                             <Badge className={getPriorityColor(notification.priority)}>
                               {getNotificationMessage(notification)}
                             </Badge>
+                            {notification.delayStatus && notification.delayStatus !== 'No Prazo' && (
+                              <Badge variant="outline" className="text-xs border-red-300 text-red-700 dark:border-red-700 dark:text-red-300">
+                                Status: {notification.delayStatus}
+                              </Badge>
+                            )}
                           </div>
-                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-1 line-clamp-2">
+                          <p className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2 line-clamp-2">
                             {notification.action.length > 80 
                               ? notification.action.substring(0, 80) + '...' 
                               : notification.action
                             }
                           </p>
-                          <div className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">
-                            <span>ID: {notification.id}</span>
-                            <span>{notification.responsible}</span>
-                            <span>Prazo: {notification.dueDate}</span>
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+                            <span className="font-semibold">ID: {notification.id}</span>
+                            <span className="flex items-center gap-1">
+                              <Users2 className="w-3 h-3" />
+                              {notification.responsible}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <CalendarCheck2 className="w-3 h-3" />
+                              {notification.dueDate}
+                            </span>
                           </div>
+                          
+                          {/* Alerta adicional para atrasos críticos */}
+                          {notification.priority === 'critical' && (
+                            <div className="mt-2 p-2 bg-red-100 dark:bg-red-900/30 rounded-md border border-red-200 dark:border-red-800">
+                              <p className="text-xs font-semibold text-red-800 dark:text-red-200 flex items-center gap-1">
+                                <AlertCircle className="w-3 h-3" />
+                                Ação requer atenção imediata!
+                              </p>
+                            </div>
+                          )}
                         </div>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => dismissNotification(notification.id)}
-                          className="h-6 w-6 p-0 opacity-50 hover:opacity-100"
+                          onClick={() => dismissNotification(`action-${notification.id}`)}
+                          className="h-6 w-6 p-0 opacity-50 hover:opacity-100 flex-shrink-0"
                         >
                           <X className="w-3 h-3" />
                         </Button>

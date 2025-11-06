@@ -1,14 +1,11 @@
 import {
-  BarChart3,
-  Users,
+  Users2,
   Building2,
-  Bot,
-  ClipboardList,
-  Menu,
+  ListChecks,
   X,
-  Settings,
-  Eye,
-  Lightbulb
+  Settings2,
+  LayoutDashboard,
+  Sparkles
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,7 +21,6 @@ interface SidebarProps {
   activeSection: string;
   onSectionChange: (section: string) => void;
   isCollapsed: boolean;
-  onToggleCollapse: () => void;
   isMobileOpen: boolean;
   onMobileToggle: () => void;
 }
@@ -33,7 +29,6 @@ const Sidebar = ({
   activeSection,
   onSectionChange,
   isCollapsed,
-  onToggleCollapse,
   isMobileOpen,
   onMobileToggle
 }: SidebarProps) => {
@@ -50,19 +45,19 @@ const Sidebar = ({
     {
       id: 'vision',
       label: 'Visão Geral',
-      icon: Eye,
+      icon: LayoutDashboard,
       description: 'Dashboard e métricas'
     },
     {
       id: 'plan',
       label: 'Plano de Ação',
-      icon: ClipboardList,
+      icon: ListChecks,
       description: 'Gerencie e acompanhe'
     },
     {
       id: 'responsible',
       label: 'Responsáveis',
-      icon: Users,
+      icon: Users2,
       description: 'Análise por responsáveis'
     },
     {
@@ -74,13 +69,13 @@ const Sidebar = ({
     {
       id: 'insights',
       label: 'Assistente ONA Insights',
-      icon: Lightbulb,
+      icon: Sparkles,
       description: 'Assistentes Gemini e Copilot'
     },
     {
       id: 'settings',
       label: 'Configurações',
-      icon: Settings,
+      icon: Settings2,
       description: 'Ajustes e preferências'
     }
   ];

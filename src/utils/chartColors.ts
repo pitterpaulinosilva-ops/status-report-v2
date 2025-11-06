@@ -86,23 +86,75 @@ export const CHART_COLORS = {
   }
 };
 
+// Paleta expandida de cores distintas e acessíveis
+const EXTENDED_COLOR_PALETTE = [
+  '#3B82F6', // Azul
+  '#10B981', // Verde
+  '#F59E0B', // Amarelo
+  '#EF4444', // Vermelho
+  '#8B5CF6', // Roxo
+  '#F97316', // Laranja
+  '#06B6D4', // Ciano
+  '#84CC16', // Lima
+  '#EC4899', // Rosa
+  '#6366F1', // Índigo
+  '#14B8A6', // Teal
+  '#F43F5E', // Rose
+  '#8B5CF6', // Violet
+  '#0EA5E9', // Sky
+  '#22C55E', // Green
+  '#EAB308', // Yellow
+  '#DC2626', // Red
+  '#7C3AED', // Purple
+  '#FB923C', // Orange
+  '#2DD4BF', // Teal
+];
+
+// Cache para armazenar cores atribuídas dinamicamente
+const colorCache: Record<string, string> = {};
+
 // Função para obter cor por índice (útil para gráficos dinâmicos)
 export const getColorByIndex = (index: number): string => {
-  const colors = [
-    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-    '#F97316', '#06B6D4', '#84CC16', '#EC4899', '#6366F1'
-  ];
-  return colors[index % colors.length];
+  return EXTENDED_COLOR_PALETTE[index % EXTENDED_COLOR_PALETTE.length];
 };
 
-// Função para obter cor de setor
+// Função para gerar cor única baseada em hash de string
+const getColorFromString = (str: string): string => {
+  if (colorCache[str]) {
+    return colorCache[str];
+  }
+  
+  // Gera um hash simples da string
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  
+  const color = EXTENDED_COLOR_PALETTE[Math.abs(hash) % EXTENDED_COLOR_PALETTE.length];
+  colorCache[str] = color;
+  return color;
+};
+
+// Função para obter cor de setor (com fallback para cores dinâmicas)
 export const getSectorColor = (sector: string): string => {
-  return CHART_COLORS.sectors[sector as keyof typeof CHART_COLORS.sectors] || CHART_COLORS.sectors['Outros'];
+  // Primeiro tenta usar a cor predefinida
+  if (CHART_COLORS.sectors[sector as keyof typeof CHART_COLORS.sectors]) {
+    return CHART_COLORS.sectors[sector as keyof typeof CHART_COLORS.sectors];
+  }
+  
+  // Se não encontrar, gera uma cor única baseada no nome
+  return getColorFromString(sector);
 };
 
-// Função para obter cor de responsável
+// Função para obter cor de responsável (com fallback para cores dinâmicas)
 export const getResponsibleColor = (responsible: string): string => {
-  return CHART_COLORS.responsibles[responsible as keyof typeof CHART_COLORS.responsibles] || CHART_COLORS.responsibles['Outros'];
+  // Primeiro tenta usar a cor predefinida
+  if (CHART_COLORS.responsibles[responsible as keyof typeof CHART_COLORS.responsibles]) {
+    return CHART_COLORS.responsibles[responsible as keyof typeof CHART_COLORS.responsibles];
+  }
+  
+  // Se não encontrar, gera uma cor única baseada no nome
+  return getColorFromString(responsible);
 };
 
 // Função para obter cor de status

@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { User } from 'lucide-react';
+import { UserCircle2 } from 'lucide-react';
 import { actionData } from '@/data/actionData';
 import { getResponsibleColor } from '@/utils/chartColors';
 
@@ -38,7 +38,7 @@ const ResponsibleChart = () => {
     <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-lg">
       <CardHeader className="pb-6">
         <CardTitle className="flex items-center text-xl text-slate-800 dark:text-slate-200">
-          <User className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" />
+          <UserCircle2 className="w-6 h-6 mr-2 text-blue-600 dark:text-blue-400" />
           Distribuição de Ações por Responsável
         </CardTitle>
       </CardHeader>
@@ -98,7 +98,7 @@ const ResponsibleChart = () => {
               Total de Ações por Responsável
             </h3>
             <div className="space-y-3 max-h-64 overflow-y-auto" role="list" aria-label="Lista de responsáveis e quantidade de ações">
-              {displayData.map((responsible, index) => (
+              {displayData.map((responsible) => (
                 <div 
                   key={responsible.name} 
                   className="flex justify-between items-center bg-slate-50 dark:bg-slate-700 p-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"

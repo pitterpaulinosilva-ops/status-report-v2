@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Download, FileText, FileSpreadsheet } from 'lucide-react';
+import { Download, FileText, Sheet } from 'lucide-react';
 import { ActionItem } from '@/data/actionData';
+import { FilteredActionWithTasks } from '@/lib/filterUtils';
+import { TaskStorage } from '@/lib/taskStorage';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 interface ExportButtonProps {
-  data: ActionItem[];
+  data: FilteredActionWithTasks[];
   searchTerm: string;
   currentFilter: string;
 }
@@ -42,15 +44,33 @@ const ExportButton = ({ data, searchTerm, currentFilter }: ExportButtonProps) =>
       const today = new Date().toLocaleDateString('pt-BR');
       doc.text(`Gerado em: ${today}`, 20, searchTerm ? 55 : 45);
       
-      // Preparar dados para a tabela
-      const tableData = data.map(action => [
-        action.id.toString(),
-        action.action.length > 50 ? action.action.substring(0, 50) + '...' : action.action,
-        action.responsible,
-        action.sector,
-        action.dueDate,
-        action.delayStatus
-      ]);
+      // Preparar dados para a tabela incluindo tarefas
+      const tableData: any[] = [];
+      
+      data.forEach(action => {
+        // Adicionar ação
+        tableData.push([
+          action.id.toString(),
+          action.action.length > 50 ? action.action.substring(0, 50) + '...' : action.action,
+          action.responsible,
+          action.sector,
+          action.dueDate,
+          action.delayStatus
+        ]);
+        
+        // Adicionar tarefas da ação (com indentação)
+        const actionTasks = TaskStorage.getTasksByActionId(action.id);
+        actionTasks.forEach(task => {
+          tableData.push([
+            `  └ ${task.id.substring(0, 8)}`,
+            `    ${task.title.length > 45 ? task.title.substring(0, 45) + '...' : task.title}`,
+            task.responsible,
+            task.sector,
+            task.dueDate,
+            task.delayStatus
+          ]);
+        });
+      });
       
       // Criar tabela
       autoTable(doc, {
@@ -110,17 +130,44 @@ const ExportButton = ({ data, searchTerm, currentFilter }: ExportButtonProps) =>
         console.warn("No data to export for Excel.");
         return;
       }
-      // Preparar dados para Excel
-      const excelData = data.map(action => ({
-        'ID': action.id,
-        'Ação': action.action,
-        'Acompanhamento': action.followUp,
-        'Responsável': action.responsible,
-        'Setor': action.sector,
-        'Prazo': action.dueDate,
-        'Status Original': action.status,
-        'Status Atual': action.delayStatus
-      }));
+      // Preparar dados para Excel incluindo tarefas
+      const excelData: any[] = [];
+      let totalTasks = 0;
+      
+      data.forEach(action => {
+        // Adicionar ação
+        excelData.push({
+          'Tipo': 'Ação',
+          'ID': action.id,
+          'Título/Ação': action.action,
+          'Acompanhamento': action.followUp,
+          'Responsável': action.responsible,
+          'Setor': action.sector,
+          'Prazo': action.dueDate,
+          'Status Original': action.status,
+          'Status Atual': action.delayStatus,
+          'ID Ação Pai': ''
+        });
+        
+        // Adicionar tarefas da ação
+        const actionTasks = TaskStorage.getTasksByActionId(action.id);
+        totalTasks += actionTasks.length;
+        
+        actionTasks.forEach(task => {
+          excelData.push({
+            'Tipo': 'Tarefa',
+            'ID': task.id,
+            'Título/Ação': task.title,
+            'Acompanhamento': task.description,
+            'Responsável': task.responsible,
+            'Setor': task.sector,
+            'Prazo': task.dueDate,
+            'Status Original': task.status,
+            'Status Atual': task.delayStatus,
+            'ID Ação Pai': action.id
+          });
+        });
+      });
       
       // Criar workbook
       const wb = XLSX.utils.book_new();
@@ -128,14 +175,16 @@ const ExportButton = ({ data, searchTerm, currentFilter }: ExportButtonProps) =>
       
       // Definir larguras das colunas
       const colWidths = [
-        { wch: 8 },  // ID
-        { wch: 50 }, // Ação
+        { wch: 10 }, // Tipo
+        { wch: 35 }, // ID
+        { wch: 50 }, // Título/Ação
         { wch: 50 }, // Acompanhamento
         { wch: 25 }, // Responsável
         { wch: 15 }, // Setor
         { wch: 12 }, // Prazo
         { wch: 15 }, // Status Original
-        { wch: 15 }  // Status Atual
+        { wch: 15 }, // Status Atual
+        { wch: 10 }  // ID Ação Pai
       ];
       ws['!cols'] = colWidths;
       
@@ -143,11 +192,16 @@ const ExportButton = ({ data, searchTerm, currentFilter }: ExportButtonProps) =>
       XLSX.utils.book_append_sheet(wb, ws, 'Ações');
       
       // Criar uma segunda aba com estatísticas
+      const allTasks = TaskStorage.getTasks();
       const stats = {
         'Total de Ações': data.length,
-        'Em Atraso': data.filter(a => a.delayStatus === 'Em Atraso').length,
-        'No Prazo': data.filter(a => a.delayStatus === 'No Prazo').length,
-        'Concluído': data.filter(a => a.delayStatus === 'Concluído').length,
+        'Total de Tarefas': totalTasks,
+        'Ações Em Atraso': data.filter(a => a.delayStatus === 'Em Atraso').length,
+        'Ações No Prazo': data.filter(a => a.delayStatus === 'No Prazo').length,
+        'Ações Concluídas': data.filter(a => a.delayStatus === 'Concluído').length,
+        'Tarefas Em Atraso': allTasks.filter(t => t.delayStatus === 'Em Atraso').length,
+        'Tarefas No Prazo': allTasks.filter(t => t.delayStatus === 'No Prazo').length,
+        'Tarefas Concluídas': allTasks.filter(t => t.delayStatus === 'Concluído').length,
         'Filtro Aplicado': currentFilter,
         'Termo de Busca': searchTerm || 'Nenhum',
         'Data de Geração': new Date().toLocaleDateString('pt-BR')
@@ -189,7 +243,7 @@ const ExportButton = ({ data, searchTerm, currentFilter }: ExportButtonProps) =>
           Exportar como PDF
         </DropdownMenuItem>
         <DropdownMenuItem onClick={exportToExcel} disabled={isExporting}>
-          <FileSpreadsheet className="w-4 h-4 mr-2" />
+          <Sheet className="w-4 h-4 mr-2" />
           Exportar como Excel
         </DropdownMenuItem>
       </DropdownMenuContent>

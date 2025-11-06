@@ -24,7 +24,7 @@ export const useStatePersistence = () => {
   const isRestoringRef = useRef(false);
 
   // Salvar estado no localStorage com debounce e criptografia
-  const saveState = useCallback((state: Partial<PersistedState>) => {
+  const saveState = (state: Partial<PersistedState>) => {
     if (isRestoringRef.current) return;
 
     if (debounceTimer.current) {
@@ -48,10 +48,10 @@ export const useStatePersistence = () => {
         // Adicionar toast ou UI de erro aqui, ex.: toast.error('Erro ao salvar estado');
       }
     }, DEBOUNCE_DELAY);
-  }, []);
+  };
 
   // Recuperar estado do localStorage com descriptografia
-  const getPersistedState = useCallback((): PersistedState => {
+  const getPersistedState = (): PersistedState => {
     try {
       // Tentar recuperar dados criptografados primeiro
       const decryptedData = getSecureItem<PersistedState>(STORAGE_KEY);
@@ -89,7 +89,7 @@ export const useStatePersistence = () => {
       scrollPosition: 0,
       lastUpdated: Date.now()
     } as PersistedState;
-  }, []);
+  };
 
   // Salvar posição de scroll
   const saveScrollPosition = useCallback((position: number) => {
@@ -121,7 +121,7 @@ export const useStatePersistence = () => {
       }, 100);
     }
     return state;
-  }, [getPersistedState]);
+  }, []);
 
   // Limpar estado persistido de forma segura
   const clearPersistedState = useCallback(() => {

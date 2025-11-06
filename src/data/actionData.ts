@@ -1,3 +1,5 @@
+import { Task } from '@/types/task';
+
 export interface ActionItem {
   id: number;
   action: string;
@@ -7,6 +9,13 @@ export interface ActionItem {
   dueDate: string;
   status: string;
   delayStatus: string;
+  
+  // Task support (optional fields)
+  tasks?: Task[];
+  taskProgress?: number; // 0-100, calculated from tasks
+  hasOverdueTasks?: boolean; // Calculated
+  totalTasks?: number; // Calculated
+  completedTasks?: number; // Calculated
 }
 
 // Plano de Ação: Manutenção da Certificação ONA 2026
