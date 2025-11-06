@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
-import { MigrationModal } from "@/components/organisms/MigrationModal";
+// import { MigrationModal } from "@/components/organisms/MigrationModal";
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
 import MainLayout from "./components/layout/MainLayout";
@@ -18,8 +18,8 @@ function App() {
         <Toaster />
         <BrowserRouter>
           <AuthProvider>
-            {/* Migration Modal - Auto-opens when localStorage data is detected */}
-            <MigrationModal />
+            {/* Migration Modal - Disabled */}
+            {/* <MigrationModal /> */}
             
             <Routes>
               {/* Rota pública de login */}

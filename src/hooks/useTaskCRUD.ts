@@ -14,7 +14,7 @@ import { calculateDelayStatus } from '@/lib/utils';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { usePermissions } from './usePermissions';
-import type { TaskInsert, TaskUpdate } from '@/types/supabase';
+import type { TaskInsert } from '@/types/supabase';
 
 /**
  * Hook for CRUD operations on tasks

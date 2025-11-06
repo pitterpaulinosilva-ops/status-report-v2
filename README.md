@@ -2,6 +2,12 @@
 
 Sistema de gestão e acompanhamento do Plano de Ação para Manutenção da Certificação ONA 2026.
 
+## ⚠️ Importante - Segurança
+
+**NUNCA commite o arquivo `.env.local` com credenciais reais!**
+
+Este repositório usa Supabase para autenticação e banco de dados. Você precisa configurar suas próprias credenciais.
+
 ## 🎨 Design Premium SESI/SENAI
 
 Interface moderna e profissional com:

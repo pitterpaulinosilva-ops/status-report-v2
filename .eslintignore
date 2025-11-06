@@ -1,0 +1,16 @@
+# Build outputs
+dist/
+build/
+.vite/
+
+# Dependencies
+node_modules/
+
+# Test files
+test-connection.html
+test-login.html
+
+# Config files
+*.config.js
+*.config.ts
+vite.config.ts

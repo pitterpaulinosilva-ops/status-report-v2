@@ -86,9 +86,13 @@ const migrateActions = async (
         
         const { error } = await supabase
           .from('actions')
-          .insert(actionInsert);
+          .insert(actionInsert)
+          .select()
+          .single();
         
         if (error) {
+          // Log more details about the error
+          console.error('Migration error for action:', action.id, error);
           errors.push(`Erro ao migrar ação ${action.id}: ${error.message}`);
         } else {
           successCount++;

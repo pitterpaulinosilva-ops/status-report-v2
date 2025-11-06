@@ -25,3 +25,13 @@ dist-ssr
 
 # Vercel
 .vercel
+
+# Test files
+test-connection.html
+test-login.html
+
+# Environment variables (IMPORTANT: Never commit .env files)
+.env
+.env.local
+.env.production
+.env.development

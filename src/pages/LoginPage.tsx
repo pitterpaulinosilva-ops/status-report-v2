@@ -34,23 +34,33 @@ const LoginPage = () => {
     setError('');
     setIsLoading(true);
 
-    const { error } = await signIn(email, password);
+    try {
+      const { error } = await signIn(email, password);
 
-    if (error) {
-      let errorMessage = 'Erro ao fazer login. Tente novamente.';
-      
-      if (error.message === 'Invalid login credentials') {
-        errorMessage = 'Email ou senha incorretos';
-      } else if (error.message.includes('fetch')) {
-        errorMessage = 'Erro de conexão com o servidor. Verifique sua internet ou tente novamente mais tarde.';
-      } else if (error.message) {
-        errorMessage = error.message;
+      if (error) {
+        let errorMessage = 'Erro ao fazer login. Tente novamente.';
+        
+        console.error('Login error:', error);
+        
+        if (error.message === 'Invalid login credentials') {
+          errorMessage = 'Email ou senha incorretos';
+        } else if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+          errorMessage = 'Erro de conexão com o servidor. Verifique sua internet ou tente novamente mais tarde.';
+        } else if (error.message.includes('NetworkError') || error.message.includes('network')) {
+          errorMessage = 'Erro de rede. Verifique sua conexão com a internet.';
+        } else if (error.message) {
+          errorMessage = `${error.message} (Código: ${error.status || 'N/A'})`;
+        }
+        
+        setError(errorMessage);
+        setIsLoading(false);
+      } else {
+        navigate('/');
       }
-      
-      setError(errorMessage);
+    } catch (err) {
+      console.error('Unexpected error:', err);
+      setError(`Erro inesperado: ${err instanceof Error ? err.message : 'Erro desconhecido'}`);
       setIsLoading(false);
-    } else {
-      navigate('/');
     }
   };
 

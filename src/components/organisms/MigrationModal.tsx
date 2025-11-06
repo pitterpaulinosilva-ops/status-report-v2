@@ -44,8 +44,11 @@ export const MigrationModal = () => {
       tasksCount: detection.tasksCount
     });
 
-    // Auto-open modal if there's data to migrate
-    if (detection.hasActions || detection.hasTask) {
+    // Check if user already skipped migration
+    const migrationSkipped = localStorage.getItem('migration_skipped');
+    
+    // Auto-open modal if there's data to migrate AND user hasn't skipped
+    if ((detection.hasActions || detection.hasTask) && !migrationSkipped) {
       setIsOpen(true);
     }
   }, [user]);
@@ -79,6 +82,22 @@ export const MigrationModal = () => {
     setIsOpen(false);
     // Marcar que o usuário pulou a migração (pode usar localStorage)
     localStorage.setItem('migration_skipped', 'true');
+  };
+
+  const handleClearLocalData = () => {
+    if (confirm('Tem certeza que deseja limpar os dados locais? Esta ação não pode ser desfeita.')) {
+      try {
+        localStorage.removeItem('actions');
+        localStorage.removeItem('actions_encrypted');
+        localStorage.removeItem('tasks');
+        localStorage.removeItem('tasks_encrypted');
+        localStorage.setItem('migration_skipped', 'true');
+        setIsOpen(false);
+        window.location.reload();
+      } catch (error) {
+        console.error('Error clearing localStorage:', error);
+      }
+    }
   };
 
   const handleClose = () => {
@@ -197,13 +216,24 @@ export const MigrationModal = () => {
             )}
 
             {result && (
-              <Button
-                onClick={() => setIsOpen(false)}
-                className="w-full"
-                variant={result.success ? 'default' : 'outline'}
-              >
-                {result.success ? 'Concluir' : 'Fechar'}
-              </Button>
+              <>
+                {!result.success && (
+                  <Button
+                    onClick={handleClearLocalData}
+                    variant="destructive"
+                    className="flex-1"
+                  >
+                    Limpar Dados Locais
+                  </Button>
+                )}
+                <Button
+                  onClick={() => setIsOpen(false)}
+                  className="flex-1"
+                  variant={result.success ? 'default' : 'outline'}
+                >
+                  {result.success ? 'Concluir' : 'Fechar'}
+                </Button>
+              </>
             )}
           </div>
 
