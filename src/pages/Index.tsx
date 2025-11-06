@@ -439,23 +439,13 @@ const Index = () => {
                   </div>
                   
                   <div className="flex items-center gap-2 sm:gap-3">
+                    {/* Botão EPA compacto */}
                     <a
                       href={planInfo.epaLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hidden md:inline-flex items-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-[#164194] to-[#0EA5E9] rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-300 shadow-md"
-                    >
-                      <ListChecks className="w-4 h-4" />
-                      <span className="hidden lg:inline">Plano de Ação do EPA</span>
-                      <span className="lg:hidden">EPA</span>
-                    </a>
-                    
-                    {/* Mobile EPA button */}
-                    <a
-                      href={planInfo.epaLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="md:hidden inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#164194] to-[#0EA5E9] rounded-lg hover:shadow-md transition-all duration-300"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#164194] to-[#0EA5E9] rounded-lg hover:shadow-md hover:scale-105 transition-all duration-300 shadow-sm"
+                      title="Plano de Ação do EPA"
                     >
                       <ListChecks className="w-3.5 h-3.5" />
                       EPA
