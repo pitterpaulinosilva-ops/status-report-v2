@@ -37,9 +37,17 @@ const LoginPage = () => {
     const { error } = await signIn(email, password);
 
     if (error) {
-      setError(error.message === 'Invalid login credentials' 
-        ? 'Email ou senha incorretos' 
-        : 'Erro ao fazer login. Tente novamente.');
+      let errorMessage = 'Erro ao fazer login. Tente novamente.';
+      
+      if (error.message === 'Invalid login credentials') {
+        errorMessage = 'Email ou senha incorretos';
+      } else if (error.message.includes('fetch')) {
+        errorMessage = 'Erro de conexão com o servidor. Verifique sua internet ou tente novamente mais tarde.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
       setIsLoading(false);
     } else {
       navigate('/');
@@ -70,7 +78,13 @@ const LoginPage = () => {
     const { error } = await resetPassword(resetEmail);
 
     if (error) {
-      setError(error.message);
+      let errorMessage = error.message;
+      
+      if (error.message.includes('fetch')) {
+        errorMessage = 'Erro de conexão com o servidor. Verifique sua internet ou tente novamente mais tarde.';
+      }
+      
+      setError(errorMessage);
       setIsLoading(false);
     } else {
       setResetSuccess(true);
