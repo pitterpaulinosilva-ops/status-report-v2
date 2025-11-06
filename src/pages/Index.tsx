@@ -21,7 +21,6 @@ import { searchInputSchema } from '@/lib/validation';
 import { cn } from '@/lib/utils';
 import AIAssistantModal from '@/components/organisms/AIAssistantModal';
 import AssistantONAInsights from '@/components/organisms/AssistantONAInsights';
-import { seedExampleTasks, clearExampleTasks } from '@/utils/seedTasks';
 import { ActionModal } from '@/components/organisms/ActionModal';
 import { ActionItem } from '@/data/actionData';
 import { Plus } from 'lucide-react';
@@ -438,46 +437,23 @@ const Index = () => {
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="flex items-center gap-2">
                     {/* Botão EPA compacto */}
                     <a
                       href={planInfo.epaLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-[#164194] to-[#0EA5E9] rounded-lg hover:shadow-md hover:scale-105 transition-all duration-300 shadow-sm"
+                      className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-white bg-gradient-to-r from-[#164194] to-[#0EA5E9] rounded-lg hover:shadow-md hover:scale-105 transition-all duration-300 shadow-sm"
                       title="Plano de Ação do EPA"
                     >
                       <ListChecks className="w-3.5 h-3.5" />
                       EPA
                     </a>
                     
-                    {/* Botões de Teste */}
-                    <div className="hidden lg:flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          seedExampleTasks();
-                          window.location.reload();
-                        }}
-                        className="text-xs"
-                      >
-                        ➕ Criar Tarefas Exemplo
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          clearExampleTasks();
-                          window.location.reload();
-                        }}
-                        className="text-xs"
-                      >
-                        🗑️ Limpar Tarefas
-                      </Button>
-                    </div>
-                    
+                    {/* Notificações */}
                     <NotificationPanel data={processedActionData} />
+                    
+                    {/* Theme Toggle */}
                     <ThemeToggle />
                   </div>
                 </div>

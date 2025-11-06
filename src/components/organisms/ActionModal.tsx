@@ -90,7 +90,7 @@ export const ActionModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle className="text-xl">
             {action ? 'Editar Ação' : 'Nova Ação'}
           </DialogTitle>

@@ -94,7 +94,7 @@ export const TaskModal = ({
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="pr-8">
           <DialogTitle className="text-xl">
             {task ? 'Editar Tarefa' : 'Nova Tarefa'}
           </DialogTitle>

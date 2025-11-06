@@ -183,7 +183,7 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
       
       <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between pr-10">
             <DialogTitle className="typography-heading-2 font-bold text-gray-800 dark:text-gray-100">
               Ação - Cód: {action.id}
             </DialogTitle>
@@ -195,9 +195,10 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
                 }}
                 size="sm"
                 variant="outline"
-                className="ml-4"
+                className="flex items-center gap-2"
               >
-                ✏️ Editar Ação
+                <Edit className="h-4 w-4" />
+                Editar Ação
               </Button>
             )}
           </div>
