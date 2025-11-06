@@ -1,74 +1,145 @@
-# Status Report FIEA ONA Dashboard
+# 🏥 Status Report FIEA - ONA 2026
 
-## Project info
+Sistema de gestão e acompanhamento do Plano de Ação para Manutenção da Certificação ONA 2026.
 
-**Projeto**: Dashboard de Status Report para FIEA ONA
+## 🎨 Design Premium SESI/SENAI
 
-## How can I edit this code?
+Interface moderna e profissional com:
+- ✅ Cores oficiais SESI/SENAI (#164194, #52AE32, #E84910)
+- ✅ Sidebar clara e moderna com ícone animado
+- ✅ Sistema de notificações com alertas de atraso crítico
+- ✅ Gráficos com cores únicas por responsável e setor
+- ✅ Cabeçalho premium com barra decorativa tricolor
+- ✅ Favicon personalizado com ícone ClipboardCheck
+- ✅ Sistema de tarefas hierárquicas
+- ✅ Totalmente responsivo e acessível
 
-There are several ways of editing your application.
+## 🚀 Deploy no Vercel
 
-**Use your preferred IDE**
+### Opção 1: Deploy Automático (Recomendado)
 
-You can work locally using your own IDE, clone this repo and push changes.
+1. Acesse [vercel.com](https://vercel.com)
+2. Faça login com sua conta GitHub
+3. Clique em "Add New Project"
+4. Importe o repositório: `pitterpaulinosilva-ops/status-report-v2`
+5. Configure:
+   - **Framework Preset**: Vite
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+   - **Install Command**: `npm install`
+6. Clique em "Deploy"
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+### Opção 2: Deploy via CLI
 
-Follow these steps:
+```bash
+# Instalar Vercel CLI
+npm i -g vercel
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# Fazer login
+vercel login
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Deploy
+vercel --prod
+```
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🛠️ Desenvolvimento Local
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+# Instalar dependências
+npm install
+
+# Iniciar servidor de desenvolvimento
 npm run dev
-```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-This project can be deployed using various hosting platforms like Vercel, Netlify, or GitHub Pages.
-
-Build the project for production:
-```sh
+# Build para produção
 npm run build
+
+# Preview do build
+npm run preview
 ```
 
-## Project Features
+## 📦 Tecnologias
 
-This Status Report dashboard includes:
-- Analytics and metrics visualization
-- Action management system
-- Advanced filtering capabilities
-- Export functionality (PDF/Excel)
-- AI Assistant integration
-- Responsive design
+- **React 18** - Framework UI
+- **TypeScript** - Tipagem estática
+- **Vite** - Build tool
+- **Tailwind CSS** - Estilização
+- **Shadcn/ui** - Componentes UI
+- **Recharts** - Gráficos
+- **Lucide React** - Ícones
+- **date-fns** - Manipulação de datas
+- **Zod** - Validação de schemas
+
+## 🎯 Funcionalidades
+
+### Gestão de Ações
+- ✅ CRUD completo de ações
+- ✅ Sistema de tarefas hierárquicas
+- ✅ Filtros avançados (status, responsável, setor)
+- ✅ Ordenação por múltiplos critérios
+- ✅ Busca em tempo real
+- ✅ Exportação para Excel
+
+### Notificações Inteligentes
+- 🚨 Alertas críticos (>30 dias de atraso)
+- ⚠️ Alertas de atraso (qualquer atraso)
+- 📅 Vencimento hoje
+- ⏰ Vence em breve (1-7 dias)
+- 📊 Dashboard de estatísticas
+
+### Visualizações
+- 📊 Dashboard executivo com KPIs
+- 👥 Análise por responsável
+- 🏢 Análise por setor
+- 📈 Gráficos interativos
+- 🎨 Cores únicas por categoria
+
+### Assistentes IA
+- 🤖 Assistente Gemini
+- 💬 Assistente Copilot
+- 📝 Insights automáticos
+
+## 🎨 Identidade Visual
+
+### Cores Oficiais
+- **Azul SESI/SENAI**: #164194
+- **Verde SESI**: #52AE32
+- **Laranja SENAI**: #E84910
+
+### Tipografia
+- **Fonte**: System fonts (Arial, Helvetica, sans-serif)
+- **Pesos**: 400 (regular), 600 (semibold), 700 (bold), 900 (black)
+
+### Componentes
+- Bordas arredondadas (8px, 12px, 16px)
+- Sombras suaves (sm, md, lg, xl)
+- Transições de 300ms
+- Hover effects com escala
+
+## 📱 Responsividade
+
+- **Mobile**: < 640px
+- **Tablet**: 640px - 1024px
+- **Desktop**: > 1024px
+- **Wide**: > 1536px
+
+## 🔒 Segurança
+
+- Content Security Policy (CSP)
+- X-Content-Type-Options
+- X-Frame-Options
+- X-XSS-Protection
+- Referrer-Policy
+- Permissions-Policy
+
+## 📄 Licença
+
+Desenvolvido por desenvolvedor independente para FIEA.
+
+## 🤝 Suporte
+
+Para suporte, entre em contato através do repositório GitHub.
+
+---
+
+**Status Report FIEA** - Manutenção da Certificação ONA 2026 🏥
