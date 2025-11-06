@@ -22,18 +22,36 @@ Interface moderna e profissional com:
 
 ## 🚀 Deploy no Vercel
 
-### Opção 1: Deploy Automático (Recomendado)
+### ⚠️ IMPORTANTE: Configure as Variáveis de Ambiente ANTES do Deploy!
 
-1. Acesse [vercel.com](https://vercel.com)
-2. Faça login com sua conta GitHub
-3. Clique em "Add New Project"
-4. Importe o repositório: `pitterpaulinosilva-ops/status-report-v2`
-5. Configure:
+**Se você não configurar as variáveis, a aplicação vai mostrar uma tela branca!**
+
+### Passo 1: Configurar Variáveis de Ambiente
+
+1. Acesse [vercel.com](https://vercel.com) e faça login
+2. Vá em **Settings** → **Environment Variables**
+3. Adicione as seguintes variáveis:
+
+```
+VITE_SUPABASE_URL=https://qjlautkateaouiaxamoo.supabase.co
+VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqbGF1dGthdGVhb3VpYXhhbW9vIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjI0MDQzNjcsImV4cCI6MjA3Nzk4MDM2N30.7f4IV7bTjjXcr6q-FOi3yNqn9_oJuvJO0hs0hzWuoYk
+```
+
+4. Marque: **Production**, **Preview**, **Development**
+5. Clique em **Save**
+
+### Passo 2: Deploy
+
+#### Opção 1: Deploy Automático (Recomendado)
+
+1. Clique em "Add New Project"
+2. Importe o repositório: `pitterpaulinosilva-ops/status-report-v2`
+3. Configure:
    - **Framework Preset**: Vite
    - **Build Command**: `npm run build`
    - **Output Directory**: `dist`
    - **Install Command**: `npm install`
-6. Clique em "Deploy"
+4. Clique em "Deploy"
 
 ### Opção 2: Deploy via CLI
 
