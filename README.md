@@ -44,6 +44,27 @@ vercel --prod
 
 ## 🛠️ Desenvolvimento Local
 
+### Configuração Inicial
+
+1. Clone o repositório
+2. Instale as dependências: `npm install`
+3. Configure as variáveis de ambiente (veja seção abaixo)
+4. Inicie o servidor: `npm run dev`
+
+### Variáveis de Ambiente
+
+Crie um arquivo `.env.local` na raiz do projeto com as seguintes variáveis:
+
+```bash
+# Supabase Configuration
+VITE_SUPABASE_URL=sua_url_do_supabase
+VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+```
+
+**Importante**: O arquivo `.env.local` já está no `.gitignore` e não será commitado.
+
+### Comandos Disponíveis
+
 ```bash
 # Instalar dependências
 npm install

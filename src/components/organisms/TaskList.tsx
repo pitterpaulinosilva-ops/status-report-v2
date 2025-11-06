@@ -8,6 +8,7 @@ import { TaskItem } from './TaskItem';
 import { Button } from '@/components/ui/button';
 import { Plus, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
 
 interface TaskListProps {
   tasks: Task[];
@@ -33,18 +34,20 @@ export const TaskList = ({
           <ListChecks className="w-4 h-4" />
           <span>Tarefas ({tasks.length})</span>
         </h4>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddTask();
-          }}
-          className="h-7 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
-        >
-          <Plus className="w-3 h-3 mr-1" />
-          Adicionar
-        </Button>
+        <PermissionGuard permission="canCreate">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddTask();
+            }}
+            className="h-7 text-xs hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 dark:hover:text-blue-400 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+          >
+            <Plus className="w-3 h-3 mr-1" />
+            Adicionar
+          </Button>
+        </PermissionGuard>
       </div>
       
       {tasks.length === 0 ? (

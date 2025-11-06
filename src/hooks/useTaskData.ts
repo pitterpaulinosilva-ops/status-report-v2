@@ -1,12 +1,32 @@
 /**
  * useTaskData Hook
- * Custom hook for loading and managing task data
+ * Custom hook for loading and managing task data from Supabase
+ * Includes realtime subscriptions for live updates
  */
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Task, TaskStats } from '@/types/task';
+import { Task, TaskStats, TaskStatus } from '@/types/task';
 import { TaskStorage } from '@/lib/taskStorage';
 import { calculateDelayStatus } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import type { Task as SupabaseTask } from '@/types/supabase';
+
+// Converter Task do Supabase para Task local
+const convertToTask = (supabaseTask: SupabaseTask): Task => ({
+  id: supabaseTask.id,
+  parentActionId: supabaseTask.action_id || 0,
+  title: supabaseTask.title,
+  description: supabaseTask.description || '',
+  responsible: 'N/A', // Será adicionado ao schema depois
+  sector: 'N/A', // Será adicionado ao schema depois
+  dueDate: new Date().toLocaleDateString('pt-BR'), // Será adicionado ao schema depois
+  status: (supabaseTask.status as TaskStatus) || 'Planejado',
+  delayStatus: 'No Prazo', // Será calculado depois
+  createdAt: supabaseTask.created_at,
+  updatedAt: supabaseTask.updated_at,
+  order: supabaseTask.order_index,
+});
 
 /**
  * Hook for managing task data for a specific action or all actions
@@ -17,53 +37,144 @@ export const useTaskData = (actionId?: number) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user } = useAuth();
   
   /**
-   * Load tasks from storage
+   * Load tasks from storage or Supabase
    */
-  const loadTasks = useCallback(() => {
+  const loadTasks = useCallback(async () => {
+    if (!user) {
+      // Fallback para localStorage se não autenticado
+      setIsLoading(true);
+      setError(null);
+      
+      try {
+        const allTasks = TaskStorage.getTasks();
+        const filteredTasks = actionId 
+          ? allTasks.filter(t => t.parentActionId === actionId)
+          : allTasks;
+        
+        const tasksWithStatus: Task[] = filteredTasks.map(task => ({
+          ...task,
+          delayStatus: calculateDelayStatus(task.dueDate, task.status)
+        }));
+        
+        tasksWithStatus.sort((a, b) => {
+          if (a.order !== b.order) {
+            return a.order - b.order;
+          }
+          const dateA = new Date(a.dueDate.split('/').reverse().join('-'));
+          const dateB = new Date(b.dueDate.split('/').reverse().join('-'));
+          return dateA.getTime() - dateB.getTime();
+        });
+        
+        setTasks(tasksWithStatus);
+      } catch (err) {
+        console.error('Error loading tasks from localStorage:', err);
+        setError('Erro ao carregar tarefas');
+        setTasks([]);
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    // Carregar do Supabase se autenticado
     setIsLoading(true);
     setError(null);
     
     try {
-      const allTasks = TaskStorage.getTasks();
-      const filteredTasks = actionId 
-        ? allTasks.filter(t => t.parentActionId === actionId)
-        : allTasks;
+      let query = supabase
+        .from('tasks')
+        .select('*')
+        .order('order_index', { ascending: true });
       
-      // Calculate delay status for each task
-      const tasksWithStatus: Task[] = filteredTasks.map(task => ({
-        ...task,
-        delayStatus: calculateDelayStatus(task.dueDate, task.status)
-      }));
+      if (actionId) {
+        query = query.eq('action_id', actionId);
+      }
       
-      // Sort by order and then by due date
-      tasksWithStatus.sort((a, b) => {
-        if (a.order !== b.order) {
-          return a.order - b.order;
-        }
-        // Parse dates for comparison
-        const dateA = new Date(a.dueDate.split('/').reverse().join('-'));
-        const dateB = new Date(b.dueDate.split('/').reverse().join('-'));
-        return dateA.getTime() - dateB.getTime();
-      });
+      const { data, error: fetchError } = await query;
       
-      setTasks(tasksWithStatus);
+      if (fetchError) throw fetchError;
+      
+      if (data && data.length > 0) {
+        const tasksWithStatus = data.map(supabaseTask => {
+          const task = convertToTask(supabaseTask);
+          return {
+            ...task,
+            delayStatus: calculateDelayStatus(task.dueDate, task.status)
+          };
+        });
+        setTasks(tasksWithStatus);
+      } else {
+        // Fallback para localStorage se não houver tasks no Supabase
+        const allTasks = TaskStorage.getTasks();
+        const filteredTasks = actionId 
+          ? allTasks.filter(t => t.parentActionId === actionId)
+          : allTasks;
+        
+        const tasksWithStatus: Task[] = filteredTasks.map(task => ({
+          ...task,
+          delayStatus: calculateDelayStatus(task.dueDate, task.status)
+        }));
+        
+        setTasks(tasksWithStatus);
+      }
     } catch (err) {
-      console.error('Error loading tasks:', err);
-      setError('Erro ao carregar tarefas');
-      setTasks([]);
+      console.error('Error loading tasks from Supabase:', err);
+      setError('Erro ao carregar tarefas do servidor');
+      
+      // Fallback para localStorage em caso de erro
+      try {
+        const allTasks = TaskStorage.getTasks();
+        const filteredTasks = actionId 
+          ? allTasks.filter(t => t.parentActionId === actionId)
+          : allTasks;
+        
+        const tasksWithStatus: Task[] = filteredTasks.map(task => ({
+          ...task,
+          delayStatus: calculateDelayStatus(task.dueDate, task.status)
+        }));
+        
+        setTasks(tasksWithStatus);
+      } catch {
+        setTasks([]);
+      }
     } finally {
       setIsLoading(false);
     }
-  }, [actionId]);
+  }, [actionId, user]);
   
   /**
-   * Load tasks on mount and when actionId changes
+   * Load tasks on mount and setup realtime subscription
    */
   useEffect(() => {
     loadTasks();
-  }, [loadTasks]);
+    
+    // Setup realtime subscription se autenticado
+    if (!user) return;
+    
+    const channel = supabase
+      .channel('tasks_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+          filter: actionId ? `action_id=eq.${actionId}` : undefined
+        },
+        (payload) => {
+          console.log('Task change received:', payload);
+          loadTasks();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadTasks, user, actionId]);
   
   /**
    * Calculate task statistics

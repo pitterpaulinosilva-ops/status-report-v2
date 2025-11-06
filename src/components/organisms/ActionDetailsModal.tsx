@@ -28,6 +28,9 @@ import { setSecureItem, getSecureItem } from '@/lib/encryption';
 import { useTaskData } from '@/hooks/useTaskData';
 import { TaskProgressBar } from './TaskProgressBar';
 import { TaskModal } from './TaskModal';
+import { PermissionGuard } from '@/components/auth/PermissionGuard';
+import { useComments } from '@/hooks/useComments';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Comment {
   id: string;
@@ -53,10 +56,24 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   
+  // Auth and Supabase comments
+  const { user, profile } = useAuth();
+  const { comments: supabaseComments, createComment: createSupabaseComment, isLoading: commentsLoading } = useComments(action.id);
+  
   // Task management
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | undefined>();
   const { tasks, stats, refresh } = useTaskData(action.id);
+  
+  // Usar comentários do Supabase se autenticado, senão usar localStorage
+  const displayComments = user ? supabaseComments.map(c => ({
+    id: c.id,
+    actionId: action.id.toString(),
+    author: c.author_name || 'Usuário',
+    content: c.content,
+    timestamp: new Date(c.created_at),
+    type: c.type as Comment['type']
+  })) : comments;
 
   // Load comments from localStorage with encryption on component mount
   useEffect(() => {
@@ -107,9 +124,19 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
     }
   }, [comments, action.id]);
 
-  const addComment = () => {
+  const addComment = async () => {
     if (!newComment.trim()) return;
 
+    // Se autenticado, usar Supabase
+    if (user) {
+      const success = await createSupabaseComment(newComment);
+      if (success) {
+        setNewComment('');
+      }
+      return;
+    }
+
+    // Fallback para localStorage se não autenticado
     const comment: Comment = {
       id: Date.now().toString(),
       actionId: action.id.toString(),
@@ -157,8 +184,8 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
     }
   };
 
-  const commentsCount = comments.filter(c => c.type === 'comment').length;
-  const historyCount = comments.filter(c => c.type !== 'comment').length;
+  const commentsCount = displayComments.filter(c => c.type === 'comment').length;
+  const historyCount = displayComments.filter(c => c.type !== 'comment').length;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -170,12 +197,12 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
         >
           <Eye className="h-4 w-4 mr-2" />
           Ver Detalhes
-          {comments.length > 0 && (
+          {displayComments.length > 0 && (
             <Badge 
               variant="secondary" 
               className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
             >
-              {comments.length}
+              {displayComments.length}
             </Badge>
           )}
         </Button>
@@ -188,18 +215,20 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
               Ação - Cód: {action.id}
             </DialogTitle>
             {onEdit && (
-              <Button
-                onClick={() => {
-                  setIsOpen(false);
-                  onEdit();
-                }}
-                size="sm"
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Edit className="h-4 w-4" />
-                Editar Ação
-              </Button>
+              <PermissionGuard permission="admin">
+                <Button
+                  onClick={() => {
+                    setIsOpen(false);
+                    onEdit();
+                  }}
+                  size="sm"
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Edit className="h-4 w-4" />
+                  Editar Ação
+                </Button>
+              </PermissionGuard>
             )}
           </div>
         </DialogHeader>
@@ -222,9 +251,9 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
             <TabsTrigger value="comments" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               Comentários
-              {comments.length > 0 && (
+              {displayComments.length > 0 && (
                 <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  {comments.length}
+                  {displayComments.length}
                 </Badge>
               )}
             </TabsTrigger>
@@ -284,9 +313,9 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
                 <h4 className="typography-heading-3 font-bold text-gray-700 dark:text-gray-200 mb-3 flex items-center gap-2">
                   <MessageSquare className="h-5 w-5" />
                   Comentários Recentes
-                  {comments.length > 0 && (
+                  {displayComments.length > 0 && (
                     <Badge variant="outline">
-                      {commentsCount} comentários
+                      {displayComments.filter(c => c.type === 'comment').length} comentários
                     </Badge>
                   )}
                 </h4>
@@ -328,7 +357,7 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
 
                 {/* Recent Comments Preview */}
                 <div className="space-y-3 max-h-60 overflow-y-auto">
-                  {comments.slice(0, 3).map((comment) => (
+                  {displayComments.slice(0, 3).map((comment) => (
                     <Card key={comment.id} className="transition-all hover:shadow-md">
                       <CardContent className="p-3">
                         <div className="flex gap-3">
@@ -353,17 +382,17 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
                       </CardContent>
                     </Card>
                   ))}
-                  {comments.length > 3 && (
+                  {displayComments.length > 3 && (
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => setActiveTab('comments')}
                       className="w-full"
                     >
-                      Ver todos os {comments.length} comentários
+                      Ver todos os {displayComments.length} comentários
                     </Button>
                   )}
-                  {comments.length === 0 && (
+                  {displayComments.length === 0 && (
                     <div className="text-center py-4 text-muted-foreground">
                       <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
                       <p className="text-sm">Nenhum comentário ainda</p>
@@ -386,17 +415,19 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
                     Gerencie as tarefas relacionadas a esta ação
                   </p>
                 </div>
-                <Button
-                  onClick={() => {
-                    setSelectedTask(undefined);
-                    setIsTaskModalOpen(true);
-                  }}
-                  size="sm"
-                  className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Nova Tarefa
-                </Button>
+                <PermissionGuard permission="canCreate">
+                  <Button
+                    onClick={() => {
+                      setSelectedTask(undefined);
+                      setIsTaskModalOpen(true);
+                    }}
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-600"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Nova Tarefa
+                  </Button>
+                </PermissionGuard>
               </div>
 
               {/* Progress Bar */}
@@ -462,17 +493,19 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
                               </span>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedTask(task);
-                              setIsTaskModalOpen(true);
-                            }}
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
+                          <PermissionGuard permission="admin">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedTask(task);
+                                setIsTaskModalOpen(true);
+                              }}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </PermissionGuard>
                         </div>
                       </CardContent>
                     </Card>
@@ -545,14 +578,14 @@ const ActionDetailsModal: React.FC<ActionDetailsModalProps> = ({ action, onUpdat
 
               {/* Comments and History List */}
               <div className="flex-1 overflow-y-auto space-y-3">
-                {comments.length === 0 ? (
+                {displayComments.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p>Nenhum comentário ainda</p>
                     <p className="text-sm">Seja o primeiro a comentar nesta ação!</p>
                   </div>
                 ) : (
-                  comments.map((comment) => (
+                  displayComments.map((comment) => (
                     <Card key={comment.id} className="transition-all hover:shadow-md">
                       <CardContent className="p-4">
                         <div className="flex gap-3">

@@ -1,6 +1,7 @@
 /**
  * useTaskCRUD Hook
  * Custom hook for Create, Read, Update, Delete operations on tasks
+ * Integrates with Supabase with localStorage fallback
  */
 
 import { useState, useCallback } from 'react';
@@ -10,6 +11,10 @@ import { TaskValidator } from '@/lib/taskValidator';
 import { TASK_ERROR_MESSAGES, MAX_TASKS_PER_ACTION } from '@/constants/taskConstants';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateDelayStatus } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from './usePermissions';
+import type { TaskInsert, TaskUpdate } from '@/types/supabase';
 
 /**
  * Hook for CRUD operations on tasks
@@ -19,6 +24,8 @@ export const useTaskCRUD = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const { user } = useAuth();
+  const { canCreateTask } = usePermissions();
   
   /**
    * Create a new task
@@ -34,13 +41,15 @@ export const useTaskCRUD = () => {
     setError(null);
     setValidationErrors({});
     
+    // Verificar permissão
+    if (!canCreateTask()) {
+      const error = new Error('Você não tem permissão para criar tarefas');
+      setError(error.message);
+      setIsSubmitting(false);
+      throw error;
+    }
+    
     try {
-      // Check max tasks limit
-      const existingTasks = TaskStorage.getTasksByActionId(parentActionId);
-      if (existingTasks.length >= MAX_TASKS_PER_ACTION) {
-        throw new Error(TASK_ERROR_MESSAGES.MAX_TASKS_REACHED);
-      }
-      
       // Sanitize input
       const sanitizedData = TaskValidator.sanitizeTaskForm(taskData);
       
@@ -51,10 +60,66 @@ export const useTaskCRUD = () => {
         throw new Error('Dados inválidos. Verifique os campos.');
       }
       
-      // Calculate delay status
+      // Se autenticado, criar no Supabase
+      if (user) {
+        // Check max tasks limit
+        const { count } = await supabase
+          .from('tasks')
+          .select('*', { count: 'exact', head: true })
+          .eq('action_id', parentActionId);
+        
+        if (count && count >= MAX_TASKS_PER_ACTION) {
+          throw new Error(TASK_ERROR_MESSAGES.MAX_TASKS_REACHED);
+        }
+        
+        const taskId = uuidv4();
+        const taskInsert: TaskInsert = {
+          id: taskId,
+          action_id: parentActionId,
+          title: sanitizedData.title,
+          description: sanitizedData.description,
+          status: sanitizedData.status,
+          order_index: count || 0,
+          created_by: user.id,
+        };
+        
+        const { data, error: insertError } = await supabase
+          .from('tasks')
+          .insert(taskInsert)
+          .select()
+          .single();
+        
+        if (insertError) throw insertError;
+        
+        const delayStatus: TaskDelayStatus = calculateDelayStatus(sanitizedData.dueDate, sanitizedData.status);
+        
+        const newTask: Task = {
+          id: data.id,
+          parentActionId: data.action_id || parentActionId,
+          title: data.title,
+          description: data.description || '',
+          responsible: sanitizedData.responsible,
+          sector: sanitizedData.sector,
+          dueDate: sanitizedData.dueDate,
+          status: sanitizedData.status,
+          delayStatus,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+          order: data.order_index,
+          comments: []
+        };
+        
+        return newTask;
+      }
+      
+      // Fallback para localStorage se não autenticado
+      const existingTasks = TaskStorage.getTasksByActionId(parentActionId);
+      if (existingTasks.length >= MAX_TASKS_PER_ACTION) {
+        throw new Error(TASK_ERROR_MESSAGES.MAX_TASKS_REACHED);
+      }
+      
       const delayStatus: TaskDelayStatus = calculateDelayStatus(sanitizedData.dueDate, sanitizedData.status);
       
-      // Create new task
       const newTask: Task = {
         id: uuidv4(),
         parentActionId,
@@ -67,13 +132,11 @@ export const useTaskCRUD = () => {
         delayStatus,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        order: existingTasks.length, // Add at the end
+        order: existingTasks.length,
         comments: []
       };
       
-      // Save to storage
       TaskStorage.saveTask(newTask);
-      
       return newTask;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : TASK_ERROR_MESSAGES.STORAGE_ERROR;
@@ -82,7 +145,7 @@ export const useTaskCRUD = () => {
     } finally {
       setIsSubmitting(false);
     }
-  }, []);
+  }, [user, canCreateTask]);
   
   /**
    * Update an existing task
