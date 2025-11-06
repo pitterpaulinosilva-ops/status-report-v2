@@ -5,7 +5,11 @@
       "disabled": false,
       "autoApprove": [
         "execute_sql",
-        "get_project"
+        "get_project",
+        "get_project_url",
+        "get_anon_key",
+        "list_tables",
+        "get_advisors"
       ]
     }
   }
