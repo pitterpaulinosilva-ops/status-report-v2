@@ -1,6 +1,10 @@
 # 🏥 Status Report FIEA - ONA 2026
 
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/pitterpaulinosilva-ops/status-report-v2)
+
 Sistema de gestão e acompanhamento do Plano de Ação para Manutenção da Certificação ONA 2026.
+
+**🚀 Deploy em 1 clique:** Clique no botão acima para fazer deploy direto na Vercel!
 
 ## 💾 Armazenamento de Dados
 
@@ -20,21 +24,20 @@ Interface moderna e profissional com:
 
 ## 🚀 Deploy no Vercel
 
-### Deploy Automático (Recomendado)
+### Opção 1: Deploy com 1 Clique (Mais Rápido!)
+
+Clique no botão "Deploy with Vercel" no topo deste README e pronto! ✨
+
+### Opção 2: Deploy Manual
 
 1. Acesse [vercel.com](https://vercel.com) e faça login
 2. Clique em "Add New Project"
 3. Importe o repositório: `pitterpaulinosilva-ops/status-report-v2`
-4. Configure:
-   - **Framework Preset**: Vite
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
-5. Clique em "Deploy"
+4. Clique em "Deploy" (configuração automática via `vercel.json`)
 
-**Pronto!** Não precisa configurar variáveis de ambiente.
+**Pronto!** Não precisa configurar nada. A aplicação funciona imediatamente.
 
-### Opção 2: Deploy via CLI
+### Opção 3: Deploy via CLI
 
 ```bash
 # Instalar Vercel CLI
@@ -47,26 +50,33 @@ vercel login
 vercel --prod
 ```
 
+### ✅ Recursos Configurados Automaticamente
+
+- ✅ Framework: Vite
+- ✅ Build Command: `npm run build`
+- ✅ Output Directory: `dist`
+- ✅ SPA Routing (todas as rotas redirecionam para index.html)
+- ✅ Sem variáveis de ambiente necessárias
+
 ## 🛠️ Desenvolvimento Local
 
 ### Configuração Inicial
 
-1. Clone o repositório
-2. Instale as dependências: `npm install`
-3. Configure as variáveis de ambiente (veja seção abaixo)
-4. Inicie o servidor: `npm run dev`
-
-### Variáveis de Ambiente
-
-Crie um arquivo `.env.local` na raiz do projeto com as seguintes variáveis:
-
 ```bash
-# Supabase Configuration
-VITE_SUPABASE_URL=sua_url_do_supabase
-VITE_SUPABASE_ANON_KEY=sua_chave_anonima_do_supabase
+# 1. Clone o repositório
+git clone https://github.com/pitterpaulinosilva-ops/status-report-v2.git
+cd status-report-v2
+
+# 2. Instale as dependências
+npm install
+
+# 3. Inicie o servidor de desenvolvimento
+npm run dev
 ```
 
-**Importante**: O arquivo `.env.local` já está no `.gitignore` e não será commitado.
+Acesse: http://localhost:8080
+
+**Pronto!** Não precisa configurar variáveis de ambiente. Os dados são salvos automaticamente no localStorage do navegador.
 
 ### Comandos Disponíveis
 
@@ -83,6 +93,47 @@ npm run build
 # Preview do build
 npm run preview
 ```
+
+## ✨ Funcionalidades
+
+### Gestão de Ações
+- ✅ Criar, editar e excluir ações
+- ✅ Atribuir responsáveis e setores
+- ✅ Definir prazos e status
+- ✅ Sistema de alertas de atraso (crítico, moderado, no prazo)
+- ✅ Filtros avançados por status, responsável, setor e prazo
+- ✅ Ordenação customizável
+
+### Sistema de Tarefas Hierárquicas
+- ✅ Criar tarefas e subtarefas ilimitadas
+- ✅ Arrastar e soltar para reordenar
+- ✅ Marcar como concluída/pendente
+- ✅ Progresso visual por ação
+
+### Dashboards e Gráficos
+- ✅ Gráfico de status das ações
+- ✅ Distribuição por responsável
+- ✅ Distribuição por setor
+- ✅ Cores únicas e consistentes
+- ✅ Totalmente interativo
+
+### Comentários e Histórico
+- ✅ Sistema de comentários por ação
+- ✅ Histórico de alterações
+- ✅ Registro de atividades
+
+### Exportação de Dados
+- ✅ Exportar para Excel (.xlsx)
+- ✅ Exportar para PDF
+- ✅ Exportar para CSV
+- ✅ Incluir gráficos no PDF
+
+### Interface
+- ✅ Design responsivo (mobile, tablet, desktop)
+- ✅ Modo claro/escuro
+- ✅ Notificações em tempo real
+- ✅ Sidebar moderna e intuitiva
+- ✅ Cores oficiais SESI/SENAI
 
 ## 📦 Tecnologias
 
